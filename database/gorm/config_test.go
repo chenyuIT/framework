@@ -6,9 +6,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	configmocks "github.com/goravel/framework/contracts/config/mocks"
-	contractsdatabase "github.com/goravel/framework/contracts/database"
-	"github.com/goravel/framework/testing/mock"
+	configmocks "github.com/chenyuIT/framework/contracts/config/mocks"
+	contractsdatabase "github.com/chenyuIT/framework/contracts/database"
+	"github.com/chenyuIT/framework/testing/mock"
 )
 
 func TestFillDefaultForConfigs(t *testing.T) {

@@ -11,7 +11,7 @@ import (
 
 	"github.com/gookit/color"
 
-	"github.com/goravel/framework/facades"
+	"github.com/chenyuIT/framework/facades"
 )
 
 type AES struct {

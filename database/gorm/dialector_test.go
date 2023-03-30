@@ -11,10 +11,10 @@ import (
 	"gorm.io/driver/sqlserver"
 	"gorm.io/gorm"
 
-	"github.com/goravel/framework/contracts/config/mocks"
-	contractsdatabase "github.com/goravel/framework/contracts/database"
-	"github.com/goravel/framework/contracts/database/orm"
-	"github.com/goravel/framework/testing/mock"
+	"github.com/chenyuIT/framework/contracts/config/mocks"
+	contractsdatabase "github.com/chenyuIT/framework/contracts/database"
+	"github.com/chenyuIT/framework/contracts/database/orm"
+	"github.com/chenyuIT/framework/testing/mock"
 )
 
 func TestDialector(t *testing.T) {

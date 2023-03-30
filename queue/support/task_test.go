@@ -5,9 +5,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/goravel/framework/contracts/queue"
-	"github.com/goravel/framework/support/file"
-	testingfile "github.com/goravel/framework/testing/file"
+	"github.com/chenyuIT/framework/contracts/queue"
+	"github.com/chenyuIT/framework/support/file"
+	testingfile "github.com/chenyuIT/framework/testing/file"
 )
 
 type Test struct {

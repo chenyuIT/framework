@@ -3,7 +3,7 @@
 package mocks
 
 import (
-	filesystem "github.com/goravel/framework/contracts/filesystem"
+	filesystem "github.com/chenyuIT/framework/contracts/filesystem"
 	mock "github.com/stretchr/testify/mock"
 )
 

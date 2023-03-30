@@ -10,7 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/goravel/framework/testing/mock"
+	"github.com/chenyuIT/framework/testing/mock"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"

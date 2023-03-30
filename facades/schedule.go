@@ -1,7 +1,7 @@
 package facades
 
 import (
-	"github.com/goravel/framework/contracts/schedule"
+	"github.com/chenyuIT/framework/contracts/schedule"
 )
 
 var Schedule schedule.Schedule

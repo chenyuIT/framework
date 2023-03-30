@@ -3,7 +3,7 @@ package database
 import (
 	"testing"
 
-	"github.com/goravel/framework/database/orm"
+	"github.com/chenyuIT/framework/database/orm"
 
 	"github.com/stretchr/testify/assert"
 )

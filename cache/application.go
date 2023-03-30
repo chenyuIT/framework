@@ -5,8 +5,8 @@ import (
 
 	"github.com/gookit/color"
 
-	"github.com/goravel/framework/contracts/cache"
-	"github.com/goravel/framework/facades"
+	"github.com/chenyuIT/framework/contracts/cache"
+	"github.com/chenyuIT/framework/facades"
 )
 
 type Application struct {

@@ -3,9 +3,9 @@ package database
 import (
 	"context"
 
-	consolecontract "github.com/goravel/framework/contracts/console"
-	"github.com/goravel/framework/database/console"
-	"github.com/goravel/framework/facades"
+	consolecontract "github.com/chenyuIT/framework/contracts/console"
+	"github.com/chenyuIT/framework/database/console"
+	"github.com/chenyuIT/framework/facades"
 )
 
 type ServiceProvider struct {

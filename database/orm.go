@@ -9,9 +9,9 @@ import (
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 
-	contractsorm "github.com/goravel/framework/contracts/database/orm"
-	databasegorm "github.com/goravel/framework/database/gorm"
-	"github.com/goravel/framework/facades"
+	contractsorm "github.com/chenyuIT/framework/contracts/database/orm"
+	databasegorm "github.com/chenyuIT/framework/database/gorm"
+	"github.com/chenyuIT/framework/facades"
 )
 
 type Orm struct {

@@ -7,10 +7,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	consolemocks "github.com/goravel/framework/contracts/console/mocks"
-	"github.com/goravel/framework/support/file"
-	supporttime "github.com/goravel/framework/support/time"
-	"github.com/goravel/framework/testing/mock"
+	consolemocks "github.com/chenyuIT/framework/contracts/console/mocks"
+	"github.com/chenyuIT/framework/support/file"
+	supporttime "github.com/chenyuIT/framework/support/time"
+	"github.com/chenyuIT/framework/testing/mock"
 )
 
 func TestMigrateMakeCommand(t *testing.T) {

@@ -5,9 +5,9 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/goravel/framework/contracts/config/mocks"
-	"github.com/goravel/framework/contracts/hash"
-	"github.com/goravel/framework/testing/mock"
+	"github.com/chenyuIT/framework/contracts/config/mocks"
+	"github.com/chenyuIT/framework/contracts/hash"
+	"github.com/chenyuIT/framework/testing/mock"
 )
 
 type ApplicationTestSuite struct {

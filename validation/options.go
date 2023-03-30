@@ -5,8 +5,8 @@ import (
 
 	"github.com/gookit/validate"
 
-	"github.com/goravel/framework/contracts/http"
-	httpvalidate "github.com/goravel/framework/contracts/validation"
+	"github.com/chenyuIT/framework/contracts/http"
+	httpvalidate "github.com/chenyuIT/framework/contracts/validation"
 )
 
 func Rules(rules map[string]string) httpvalidate.Option {

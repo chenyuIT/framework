@@ -1,8 +1,8 @@
 package event
 
 import (
-	"github.com/goravel/framework/contracts/event"
-	"github.com/goravel/framework/event/support"
+	"github.com/chenyuIT/framework/contracts/event"
+	"github.com/chenyuIT/framework/event/support"
 )
 
 type Application struct {

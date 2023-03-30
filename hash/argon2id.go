@@ -9,7 +9,7 @@ import (
 
 	"golang.org/x/crypto/argon2"
 
-	"github.com/goravel/framework/facades"
+	"github.com/chenyuIT/framework/facades"
 )
 
 type Argon2id struct {

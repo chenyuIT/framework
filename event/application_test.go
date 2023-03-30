@@ -10,12 +10,12 @@ import (
 	"github.com/spf13/cast"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/goravel/framework/contracts/event"
-	eventcontract "github.com/goravel/framework/contracts/event"
-	"github.com/goravel/framework/facades"
-	"github.com/goravel/framework/queue"
-	testingdocker "github.com/goravel/framework/testing/docker"
-	"github.com/goravel/framework/testing/mock"
+	"github.com/chenyuIT/framework/contracts/event"
+	eventcontract "github.com/chenyuIT/framework/contracts/event"
+	"github.com/chenyuIT/framework/facades"
+	"github.com/chenyuIT/framework/queue"
+	testingdocker "github.com/chenyuIT/framework/testing/docker"
+	"github.com/chenyuIT/framework/testing/mock"
 )
 
 var (

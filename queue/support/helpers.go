@@ -11,9 +11,9 @@ import (
 	"github.com/RichardKnop/machinery/v2/locks/eager"
 	"github.com/gookit/color"
 
-	"github.com/goravel/framework/contracts/event"
-	"github.com/goravel/framework/contracts/queue"
-	"github.com/goravel/framework/facades"
+	"github.com/chenyuIT/framework/contracts/event"
+	"github.com/chenyuIT/framework/contracts/queue"
+	"github.com/chenyuIT/framework/facades"
 )
 
 func GetServer(connection string, queue string) (*machinery.Server, error) {

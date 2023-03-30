@@ -1,9 +1,9 @@
 package console
 
 import (
-	"github.com/goravel/framework/console/console"
-	console2 "github.com/goravel/framework/contracts/console"
-	"github.com/goravel/framework/facades"
+	"github.com/chenyuIT/framework/console/console"
+	console2 "github.com/chenyuIT/framework/contracts/console"
+	"github.com/chenyuIT/framework/facades"
 )
 
 type ServiceProvider struct {

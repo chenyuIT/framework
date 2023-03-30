@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/goravel/framework/contracts/cache"
-	testingdocker "github.com/goravel/framework/testing/docker"
-	"github.com/goravel/framework/testing/mock"
+	"github.com/chenyuIT/framework/contracts/cache"
+	testingdocker "github.com/chenyuIT/framework/testing/docker"
+	"github.com/chenyuIT/framework/testing/mock"
 
 	"github.com/ory/dockertest/v3"
 	"github.com/stretchr/testify/suite"

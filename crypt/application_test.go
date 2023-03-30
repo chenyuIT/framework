@@ -5,8 +5,8 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/goravel/framework/facades"
-	"github.com/goravel/framework/testing/mock"
+	"github.com/chenyuIT/framework/facades"
+	"github.com/chenyuIT/framework/testing/mock"
 )
 
 type ApplicationTestSuite struct {

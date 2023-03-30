@@ -1,7 +1,7 @@
 package facades
 
 import (
-	"github.com/goravel/framework/contracts/crypt"
+	"github.com/chenyuIT/framework/contracts/crypt"
 )
 
 var Crypt crypt.Crypt

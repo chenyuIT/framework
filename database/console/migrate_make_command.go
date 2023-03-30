@@ -3,8 +3,8 @@ package console
 import (
 	"github.com/gookit/color"
 
-	"github.com/goravel/framework/contracts/console"
-	"github.com/goravel/framework/contracts/console/command"
+	"github.com/chenyuIT/framework/contracts/console"
+	"github.com/chenyuIT/framework/contracts/console/command"
 )
 
 type MigrateMakeCommand struct {

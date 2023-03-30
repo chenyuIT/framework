@@ -1,7 +1,7 @@
 package cache
 
 import (
-	"github.com/goravel/framework/facades"
+	"github.com/chenyuIT/framework/facades"
 )
 
 func prefix() string {

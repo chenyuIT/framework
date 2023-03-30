@@ -12,9 +12,9 @@ import (
 	"github.com/stretchr/testify/suite"
 	_ "gorm.io/driver/postgres"
 
-	contractsorm "github.com/goravel/framework/contracts/database/orm"
-	"github.com/goravel/framework/database/orm"
-	"github.com/goravel/framework/support/file"
+	contractsorm "github.com/chenyuIT/framework/contracts/database/orm"
+	"github.com/chenyuIT/framework/database/orm"
+	"github.com/chenyuIT/framework/support/file"
 )
 
 type User struct {

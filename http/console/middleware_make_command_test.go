@@ -5,8 +5,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	consolemocks "github.com/goravel/framework/contracts/console/mocks"
-	"github.com/goravel/framework/support/file"
+	consolemocks "github.com/chenyuIT/framework/contracts/console/mocks"
+	"github.com/chenyuIT/framework/support/file"
 )
 
 func TestMiddlewareMakeCommand(t *testing.T) {

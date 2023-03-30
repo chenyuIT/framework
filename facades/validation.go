@@ -1,7 +1,7 @@
 package facades
 
 import (
-	"github.com/goravel/framework/contracts/validation"
+	"github.com/chenyuIT/framework/contracts/validation"
 )
 
 var Validation validation.Validation

@@ -3,8 +3,8 @@
 package mocks
 
 import (
-	auth "github.com/goravel/framework/contracts/auth"
-	http "github.com/goravel/framework/contracts/http"
+	auth "github.com/chenyuIT/framework/contracts/auth"
+	http "github.com/chenyuIT/framework/contracts/http"
 
 	mock "github.com/stretchr/testify/mock"
 )

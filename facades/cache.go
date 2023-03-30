@@ -1,5 +1,5 @@
 package facades
 
-import "github.com/goravel/framework/contracts/cache"
+import "github.com/chenyuIT/framework/contracts/cache"
 
 var Cache cache.Store

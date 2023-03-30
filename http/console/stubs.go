@@ -7,8 +7,8 @@ func (r Stubs) Request() string {
 	return `package requests
 
 import (
-	"github.com/goravel/framework/contracts/http"
-	"github.com/goravel/framework/contracts/validation"
+	"github.com/chenyuIT/framework/contracts/http"
+	"github.com/chenyuIT/framework/contracts/validation"
 )
 
 type DummyRequest struct {
@@ -41,7 +41,7 @@ func (r Stubs) Controller() string {
 	return `package controllers
 
 import (
-	"github.com/goravel/framework/contracts/http"
+	"github.com/chenyuIT/framework/contracts/http"
 )
 
 type DummyController struct {
@@ -63,7 +63,7 @@ func (r Stubs) Middleware() string {
 	return `package middleware
 
 import (
-	"github.com/goravel/framework/contracts/http"
+	"github.com/chenyuIT/framework/contracts/http"
 )
 
 func DummyMiddleware() http.Middleware {

@@ -3,8 +3,8 @@ package console
 import (
 	"testing"
 
-	consolemocks "github.com/goravel/framework/contracts/console/mocks"
-	"github.com/goravel/framework/support/file"
+	consolemocks "github.com/chenyuIT/framework/contracts/console/mocks"
+	"github.com/chenyuIT/framework/support/file"
 
 	"github.com/stretchr/testify/assert"
 )

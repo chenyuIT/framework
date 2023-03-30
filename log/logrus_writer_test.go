@@ -11,10 +11,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
-	configmocks "github.com/goravel/framework/contracts/config/mocks"
-	"github.com/goravel/framework/facades"
-	"github.com/goravel/framework/support/file"
-	"github.com/goravel/framework/support/time"
+	configmocks "github.com/chenyuIT/framework/contracts/config/mocks"
+	"github.com/chenyuIT/framework/facades"
+	"github.com/chenyuIT/framework/support/file"
+	"github.com/chenyuIT/framework/support/time"
 )
 
 var singleLog = "storage/logs/goravel.log"

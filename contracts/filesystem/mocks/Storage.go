@@ -5,7 +5,7 @@ package mocks
 import (
 	context "context"
 
-	filesystem "github.com/goravel/framework/contracts/filesystem"
+	filesystem "github.com/chenyuIT/framework/contracts/filesystem"
 	mock "github.com/stretchr/testify/mock"
 
 	time "time"

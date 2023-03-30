@@ -4,8 +4,8 @@ import (
 	"path"
 	"strings"
 
-	"github.com/goravel/framework/contracts/filesystem"
-	"github.com/goravel/framework/support/file"
+	"github.com/chenyuIT/framework/contracts/filesystem"
+	"github.com/chenyuIT/framework/support/file"
 )
 
 const MaxFileNum = 1000

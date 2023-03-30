@@ -3,7 +3,7 @@ package auth
 import (
 	"time"
 
-	"github.com/goravel/framework/contracts/http"
+	"github.com/chenyuIT/framework/contracts/http"
 )
 
 //go:generate mockery --name=Auth

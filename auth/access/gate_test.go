@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/goravel/framework/contracts/auth/access"
+	"github.com/chenyuIT/framework/contracts/auth/access"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"

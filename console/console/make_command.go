@@ -5,10 +5,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/goravel/framework/contracts/console"
-	"github.com/goravel/framework/contracts/console/command"
-	"github.com/goravel/framework/support/file"
-	"github.com/goravel/framework/support/str"
+	"github.com/chenyuIT/framework/contracts/console"
+	"github.com/chenyuIT/framework/contracts/console/command"
+	"github.com/chenyuIT/framework/support/file"
+	"github.com/chenyuIT/framework/support/str"
 )
 
 type MakeCommand struct {

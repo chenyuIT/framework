@@ -6,9 +6,9 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/goravel/framework/contracts/log"
-	"github.com/goravel/framework/facades"
-	"github.com/goravel/framework/log/logger"
+	"github.com/chenyuIT/framework/contracts/log"
+	"github.com/chenyuIT/framework/facades"
+	"github.com/chenyuIT/framework/log/logger"
 )
 
 type Writer struct {

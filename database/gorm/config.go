@@ -3,9 +3,9 @@ package gorm
 import (
 	"fmt"
 
-	contractsdatabase "github.com/goravel/framework/contracts/database"
-	"github.com/goravel/framework/contracts/database/orm"
-	"github.com/goravel/framework/facades"
+	contractsdatabase "github.com/chenyuIT/framework/contracts/database"
+	"github.com/chenyuIT/framework/contracts/database/orm"
+	"github.com/chenyuIT/framework/facades"
 )
 
 func Configs(connection string) (readConfigs, writeConfigs []contractsdatabase.Config, err error) {

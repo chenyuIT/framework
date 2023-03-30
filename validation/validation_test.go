@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cast"
 	"github.com/stretchr/testify/assert"
 
-	httpvalidate "github.com/goravel/framework/contracts/validation"
+	httpvalidate "github.com/chenyuIT/framework/contracts/validation"
 )
 
 func TestMake(t *testing.T) {

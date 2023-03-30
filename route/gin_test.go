@@ -19,10 +19,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	configmocks "github.com/goravel/framework/contracts/config/mocks"
-	httpcontract "github.com/goravel/framework/contracts/http"
-	"github.com/goravel/framework/contracts/validation"
-	"github.com/goravel/framework/testing/mock"
+	configmocks "github.com/chenyuIT/framework/contracts/config/mocks"
+	httpcontract "github.com/chenyuIT/framework/contracts/http"
+	"github.com/chenyuIT/framework/contracts/validation"
+	"github.com/chenyuIT/framework/testing/mock"
 )
 
 func TestRun(t *testing.T) {

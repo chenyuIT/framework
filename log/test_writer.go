@@ -3,8 +3,8 @@ package log
 import (
 	"fmt"
 
-	"github.com/goravel/framework/contracts/log"
-	"github.com/goravel/framework/support/time"
+	"github.com/chenyuIT/framework/contracts/log"
+	"github.com/chenyuIT/framework/support/time"
 )
 
 type TestWriter struct {

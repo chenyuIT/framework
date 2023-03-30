@@ -1,7 +1,7 @@
 package crypt
 
 import (
-	"github.com/goravel/framework/contracts/crypt"
+	"github.com/chenyuIT/framework/contracts/crypt"
 )
 
 type Application struct {

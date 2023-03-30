@@ -6,8 +6,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	contractsdatabase "github.com/goravel/framework/contracts/database"
-	"github.com/goravel/framework/testing/mock"
+	contractsdatabase "github.com/chenyuIT/framework/contracts/database"
+	"github.com/chenyuIT/framework/testing/mock"
 )
 
 const (

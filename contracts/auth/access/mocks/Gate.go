@@ -5,7 +5,7 @@ package mocks
 import (
 	context "context"
 
-	access "github.com/goravel/framework/contracts/auth/access"
+	access "github.com/chenyuIT/framework/contracts/auth/access"
 
 	mock "github.com/stretchr/testify/mock"
 )

@@ -5,8 +5,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/goravel/framework/contracts/console"
-	"github.com/goravel/framework/contracts/console/command"
+	"github.com/chenyuIT/framework/contracts/console"
+	"github.com/chenyuIT/framework/contracts/console/command"
 )
 
 var testCommand = 0

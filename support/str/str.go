@@ -7,7 +7,7 @@ import (
 	"strings"
 	"unicode"
 
-	supporttime "github.com/goravel/framework/support/time"
+	supporttime "github.com/chenyuIT/framework/support/time"
 )
 
 func Random(length int) string {

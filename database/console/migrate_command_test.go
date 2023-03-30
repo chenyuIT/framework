@@ -5,10 +5,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	consolemocks "github.com/goravel/framework/contracts/console/mocks"
-	"github.com/goravel/framework/database/gorm"
-	"github.com/goravel/framework/database/orm"
-	"github.com/goravel/framework/support/file"
+	consolemocks "github.com/chenyuIT/framework/contracts/console/mocks"
+	"github.com/chenyuIT/framework/database/gorm"
+	"github.com/chenyuIT/framework/database/orm"
+	"github.com/chenyuIT/framework/support/file"
 )
 
 type Agent struct {

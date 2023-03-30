@@ -3,7 +3,7 @@
 package mocks
 
 import (
-	console "github.com/goravel/framework/contracts/console"
+	console "github.com/chenyuIT/framework/contracts/console"
 	mock "github.com/stretchr/testify/mock"
 )
 

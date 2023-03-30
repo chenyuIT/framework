@@ -1,9 +1,9 @@
 package event
 
 import (
-	"github.com/goravel/framework/contracts/console"
-	eventConsole "github.com/goravel/framework/event/console"
-	"github.com/goravel/framework/facades"
+	"github.com/chenyuIT/framework/contracts/console"
+	eventConsole "github.com/chenyuIT/framework/event/console"
+	"github.com/chenyuIT/framework/facades"
 )
 
 type ServiceProvider struct {

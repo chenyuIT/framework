@@ -5,10 +5,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	configmocks "github.com/goravel/framework/contracts/config/mocks"
-	"github.com/goravel/framework/contracts/event"
-	queuecontract "github.com/goravel/framework/contracts/queue"
-	"github.com/goravel/framework/testing/mock"
+	configmocks "github.com/chenyuIT/framework/contracts/config/mocks"
+	"github.com/chenyuIT/framework/contracts/event"
+	queuecontract "github.com/chenyuIT/framework/contracts/queue"
+	"github.com/chenyuIT/framework/testing/mock"
 )
 
 func TestGetServer_Sync(t *testing.T) {

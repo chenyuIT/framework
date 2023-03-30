@@ -7,9 +7,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/goravel/framework/support/file"
-	supporttime "github.com/goravel/framework/support/time"
-	"github.com/goravel/framework/testing/mock"
+	"github.com/chenyuIT/framework/support/file"
+	supporttime "github.com/chenyuIT/framework/support/time"
+	"github.com/chenyuIT/framework/testing/mock"
 )
 
 func TestCreate(t *testing.T) {

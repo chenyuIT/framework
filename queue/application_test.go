@@ -10,13 +10,13 @@ import (
 	"github.com/spf13/cast"
 	"github.com/stretchr/testify/suite"
 
-	configmocks "github.com/goravel/framework/contracts/config/mocks"
-	"github.com/goravel/framework/contracts/event"
-	"github.com/goravel/framework/contracts/queue"
-	"github.com/goravel/framework/queue/support"
-	supporttime "github.com/goravel/framework/support/time"
-	testingdocker "github.com/goravel/framework/testing/docker"
-	"github.com/goravel/framework/testing/mock"
+	configmocks "github.com/chenyuIT/framework/contracts/config/mocks"
+	"github.com/chenyuIT/framework/contracts/event"
+	"github.com/chenyuIT/framework/contracts/queue"
+	"github.com/chenyuIT/framework/queue/support"
+	supporttime "github.com/chenyuIT/framework/support/time"
+	testingdocker "github.com/chenyuIT/framework/testing/docker"
+	"github.com/chenyuIT/framework/testing/mock"
 )
 
 var (

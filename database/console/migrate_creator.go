@@ -5,10 +5,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/goravel/framework/contracts/database/orm"
-	"github.com/goravel/framework/facades"
-	"github.com/goravel/framework/support/file"
-	supporttime "github.com/goravel/framework/support/time"
+	"github.com/chenyuIT/framework/contracts/database/orm"
+	"github.com/chenyuIT/framework/facades"
+	"github.com/chenyuIT/framework/support/file"
+	supporttime "github.com/chenyuIT/framework/support/time"
 )
 
 type MigrateCreator struct {

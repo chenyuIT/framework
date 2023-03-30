@@ -1,9 +1,9 @@
 package console
 
 import (
-	"github.com/goravel/framework/contracts/console"
-	"github.com/goravel/framework/contracts/console/command"
-	"github.com/goravel/framework/facades"
+	"github.com/chenyuIT/framework/contracts/console"
+	"github.com/chenyuIT/framework/contracts/console/command"
+	"github.com/chenyuIT/framework/facades"
 )
 
 type ListCommand struct {
