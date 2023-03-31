@@ -1,6 +1,9 @@
 package database
 
-import "reflect"
+import (
+	"reflect"
+	"strings"
+)
 
 func GetID(dest any) any {
 	if dest == nil {
@@ -27,8 +30,13 @@ func GetIDByReflect(t reflect.Type, v reflect.Value) any {
 				}
 			}
 		}
-		if t.Field(i).Tag.Get("gorm") == "primaryKey" {
-			return v.Field(i).Interface()
+		gormTagContent := strings.Split(t.Field(i).Tag.Get("gorm"), ";")
+		if len(gormTagContent) > 0 {
+			for _, val := range gormTagContent {
+				if val == "primaryKey" {
+					return v.Field(i).Interface()
+				}
+			}
 		}
 	}
 
