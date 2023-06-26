@@ -4,4 +4,6 @@ import (
 	"github.com/chenyuIT/framework/contracts/queue"
 )
 
-var Queue queue.Queue
+func Queue() queue.Queue {
+	return App().MakeQueue()
+}

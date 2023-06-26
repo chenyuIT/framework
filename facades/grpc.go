@@ -4,4 +4,6 @@ import (
 	"github.com/chenyuIT/framework/contracts/grpc"
 )
 
-var Grpc grpc.Grpc
+func Grpc() grpc.Grpc {
+	return App().MakeGrpc()
+}

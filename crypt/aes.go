@@ -5,13 +5,14 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"io"
+	"os"
 
+	"github.com/bytedance/sonic"
 	"github.com/gookit/color"
 
-	"github.com/chenyuIT/framework/facades"
+	"github.com/chenyuIT/framework/contracts/config"
 )
 
 type AES struct {
@@ -19,8 +20,15 @@ type AES struct {
 }
 
 // NewAES returns a new AES hasher.
-func NewAES() *AES {
-	key := facades.Config.GetString("app.key")
+func NewAES(config config.Config) *AES {
+	key := config.GetString("app.key")
+
+	// Don't use AES in artisan key:generate command
+	args := os.Args
+	if len(args) >= 3 && args[1] == "artisan" && args[2] == "key:generate" {
+		return nil
+	}
+
 	// check key length before using it
 	if len(key) != 16 && len(key) != 24 && len(key) != 32 {
 		color.Redln("[Crypt] Empty or invalid APP_KEY, please reset it.\nRun command:\ngo run . artisan key:generate")
@@ -53,7 +61,7 @@ func (b *AES) EncryptString(value string) (string, error) {
 
 	ciphertext := aesgcm.Seal(nil, iv, plaintext, nil)
 
-	jsonEncoded, err := json.Marshal(map[string][]byte{
+	jsonEncoded, err := sonic.Marshal(map[string][]byte{
 		"iv":    iv,
 		"value": ciphertext,
 	})
@@ -72,7 +80,7 @@ func (b *AES) DecryptString(payload string) (string, error) {
 	}
 
 	decodeJson := make(map[string][]byte)
-	err = json.Unmarshal(decodePayload, &decodeJson)
+	err = sonic.Unmarshal(decodePayload, &decodeJson)
 	if err != nil {
 		return "", err
 	}

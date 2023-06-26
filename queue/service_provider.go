@@ -2,23 +2,27 @@ package queue
 
 import (
 	"github.com/chenyuIT/framework/contracts/console"
-	"github.com/chenyuIT/framework/facades"
+	"github.com/chenyuIT/framework/contracts/foundation"
 	queueConsole "github.com/chenyuIT/framework/queue/console"
 )
+
+const Binding = "goravel.queue"
 
 type ServiceProvider struct {
 }
 
-func (receiver *ServiceProvider) Register() {
-	facades.Queue = NewApplication()
+func (receiver *ServiceProvider) Register(app foundation.Application) {
+	app.Singleton(Binding, func(app foundation.Application) (any, error) {
+		return NewApplication(app.MakeConfig()), nil
+	})
 }
 
-func (receiver *ServiceProvider) Boot() {
-	receiver.registerCommands()
+func (receiver *ServiceProvider) Boot(app foundation.Application) {
+	receiver.registerCommands(app)
 }
 
-func (receiver *ServiceProvider) registerCommands() {
-	facades.Artisan.Register([]console.Command{
+func (receiver *ServiceProvider) registerCommands(app foundation.Application) {
+	app.MakeArtisan().Register([]console.Command{
 		&queueConsole.JobMakeCommand{},
 	})
 }

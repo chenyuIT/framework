@@ -2,15 +2,24 @@ package orm
 
 import (
 	"errors"
-	"time"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+
+	contractsorm "github.com/chenyuIT/framework/contracts/database/orm"
+	"github.com/chenyuIT/framework/support/carbon"
 )
 
 const Associations = clause.Associations
 
 var ErrRecordNotFound = errors.New("record not found")
+
+var Observers = make([]Observer, 0)
+
+type Observer struct {
+	Model    any
+	Observer contractsorm.Observer
+}
 
 type Model struct {
 	ID uint `gorm:"primaryKey"`
@@ -22,6 +31,6 @@ type SoftDeletes struct {
 }
 
 type Timestamps struct {
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	CreatedAt carbon.DateTime `gorm:"autoCreateTime;column:created_at"`
+	UpdatedAt carbon.DateTime `gorm:"autoUpdateTime;column:updated_at"`
 }

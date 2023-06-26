@@ -2,4 +2,6 @@ package facades
 
 import "github.com/chenyuIT/framework/contracts/filesystem"
 
-var Storage filesystem.Storage
+func Storage() filesystem.Storage {
+	return App().MakeStorage()
+}

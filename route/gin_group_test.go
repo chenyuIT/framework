@@ -6,28 +6,71 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 
-	frameworkcache "github.com/chenyuIT/framework/cache"
-	mockconfig "github.com/chenyuIT/framework/contracts/config/mocks"
+	cachemock "github.com/chenyuIT/framework/contracts/cache/mocks"
+	configmock "github.com/chenyuIT/framework/contracts/config/mocks"
 	httpcontract "github.com/chenyuIT/framework/contracts/http"
+	httpmock "github.com/chenyuIT/framework/contracts/http/mocks"
 	"github.com/chenyuIT/framework/contracts/route"
-	"github.com/chenyuIT/framework/facades"
 	frameworkhttp "github.com/chenyuIT/framework/http"
 	"github.com/chenyuIT/framework/http/limit"
 	"github.com/chenyuIT/framework/http/middleware"
-	"github.com/chenyuIT/framework/testing/mock"
 )
+
+type resourceController struct{}
+
+func (c resourceController) Index(ctx httpcontract.Context) {
+	action := ctx.Value("action")
+	ctx.Response().Json(http.StatusOK, httpcontract.Json{
+		"action": action,
+	})
+}
+
+func (c resourceController) Show(ctx httpcontract.Context) {
+	action := ctx.Value("action")
+	id := ctx.Request().Input("id")
+	ctx.Response().Json(http.StatusOK, httpcontract.Json{
+		"action": action,
+		"id":     id,
+	})
+}
+
+func (c resourceController) Store(ctx httpcontract.Context) {
+	action := ctx.Value("action")
+	ctx.Response().Json(http.StatusOK, httpcontract.Json{
+		"action": action,
+	})
+}
+
+func (c resourceController) Update(ctx httpcontract.Context) {
+	action := ctx.Value("action")
+	id := ctx.Request().Input("id")
+	ctx.Response().Json(http.StatusOK, httpcontract.Json{
+		"action": action,
+		"id":     id,
+	})
+}
+
+func (c resourceController) Destroy(ctx httpcontract.Context) {
+	action := ctx.Value("action")
+	id := ctx.Request().Input("id")
+	ctx.Response().Json(http.StatusOK, httpcontract.Json{
+		"action": action,
+		"id":     id,
+	})
+}
 
 func TestGinGroup(t *testing.T) {
 	var (
 		gin        *Gin
-		mockConfig *mockconfig.Config
+		mockConfig *configmock.Config
 	)
 	beforeEach := func() {
-		mockConfig = mock.Config()
+		mockConfig = &configmock.Config{}
 		mockConfig.On("GetBool", "app.debug").Return(true).Once()
 
-		gin = NewGin()
+		gin = NewGin(mockConfig)
 	}
 	tests := []struct {
 		name       string
@@ -185,6 +228,7 @@ func TestGinGroup(t *testing.T) {
 				mockConfig.On("Get", "cors.exposed_headers").Return([]string{"*"}).Once()
 				mockConfig.On("GetInt", "cors.max_age").Return(0).Once()
 				mockConfig.On("GetBool", "cors.supports_credentials").Return(false).Once()
+				frameworkhttp.ConfigFacade = mockConfig
 				gin.GlobalMiddleware(middleware.Cors())
 				gin.Any("/any/{id}", func(ctx httpcontract.Context) {
 					ctx.Response().Success().Json(httpcontract.Json{
@@ -211,6 +255,96 @@ func TestGinGroup(t *testing.T) {
 			url:        "/any/1",
 			expectCode: http.StatusOK,
 			expectBody: "{\"id\":\"1\"}",
+		},
+		{
+			name: "Resource Index",
+			setup: func(req *http.Request) {
+				resource := resourceController{}
+				gin.GlobalMiddleware(func(ctx httpcontract.Context) {
+					ctx.WithValue("action", "index")
+					ctx.Request().Next()
+				})
+				gin.Resource("/resource", resource)
+			},
+			method:     "GET",
+			url:        "/resource",
+			expectCode: http.StatusOK,
+			expectBody: "{\"action\":\"index\"}",
+		},
+		{
+			name: "Resource Show",
+			setup: func(req *http.Request) {
+				resource := resourceController{}
+				gin.GlobalMiddleware(func(ctx httpcontract.Context) {
+					ctx.WithValue("action", "show")
+					ctx.Request().Next()
+				})
+				gin.Resource("/resource", resource)
+			},
+			method:     "GET",
+			url:        "/resource/1",
+			expectCode: http.StatusOK,
+			expectBody: "{\"action\":\"show\",\"id\":\"1\"}",
+		},
+		{
+			name: "Resource Store",
+			setup: func(req *http.Request) {
+				resource := resourceController{}
+				gin.GlobalMiddleware(func(ctx httpcontract.Context) {
+					ctx.WithValue("action", "store")
+					ctx.Request().Next()
+				})
+				gin.Resource("/resource", resource)
+			},
+			method:     "POST",
+			url:        "/resource",
+			expectCode: http.StatusOK,
+			expectBody: "{\"action\":\"store\"}",
+		},
+		{
+			name: "Resource Update (PUT)",
+			setup: func(req *http.Request) {
+				resource := resourceController{}
+				gin.GlobalMiddleware(func(ctx httpcontract.Context) {
+					ctx.WithValue("action", "update")
+					ctx.Request().Next()
+				})
+				gin.Resource("/resource", resource)
+			},
+			method:     "PUT",
+			url:        "/resource/1",
+			expectCode: http.StatusOK,
+			expectBody: "{\"action\":\"update\",\"id\":\"1\"}",
+		},
+		{
+			name: "Resource Update (PATCH)",
+			setup: func(req *http.Request) {
+				resource := resourceController{}
+				gin.GlobalMiddleware(func(ctx httpcontract.Context) {
+					ctx.WithValue("action", "update")
+					ctx.Request().Next()
+				})
+				gin.Resource("/resource", resource)
+			},
+			method:     "PATCH",
+			url:        "/resource/1",
+			expectCode: http.StatusOK,
+			expectBody: "{\"action\":\"update\",\"id\":\"1\"}",
+		},
+		{
+			name: "Resource Destroy",
+			setup: func(req *http.Request) {
+				resource := resourceController{}
+				gin.GlobalMiddleware(func(ctx httpcontract.Context) {
+					ctx.WithValue("action", "destroy")
+					ctx.Request().Next()
+				})
+				gin.Resource("/resource", resource)
+			},
+			method:     "DELETE",
+			url:        "/resource/1",
+			expectCode: http.StatusOK,
+			expectBody: "{\"action\":\"destroy\",\"id\":\"1\"}",
 		},
 		{
 			name: "Static",
@@ -355,65 +489,95 @@ func TestGinGroup(t *testing.T) {
 			expectBody: "{\"global\":\"goravel\"}",
 		},
 		{
-			name: "Throttle Middleware Passed",
+			name: "Middleware Conflict",
 			setup: func(req *http.Request) {
-				mockConfig.On("GetString", "cache.default").Return("memory").Once()
-				mockConfig.On("GetString", "cache.stores.memory.driver").Return("memory").Once()
-				mockConfig.On("GetString", "cache.prefix").Return("throttle").Twice()
-
-				app := frameworkcache.Application{}
-				facades.Cache = app.Init()
-				facades.RateLimiter = frameworkhttp.NewRateLimiter()
-				facades.RateLimiter.For("test", func(ctx httpcontract.Context) httpcontract.Limit {
-					return limit.PerMinute(1)
-				})
-
-				gin.GlobalMiddleware(middleware.Throttle("test"))
-				gin.Any("/throttle/{id}", func(ctx httpcontract.Context) {
-					ctx.Response().Success().Json(httpcontract.Json{
-						"id": ctx.Request().Input("id"),
+				gin.Prefix("conflict").Group(func(route1 route.Route) {
+					route1.Middleware(contextMiddleware()).Get("/middleware1/{id}", func(ctx httpcontract.Context) {
+						ctx.Response().Success().Json(httpcontract.Json{
+							"id":   ctx.Request().Input("id"),
+							"ctx":  ctx.Value("ctx"),
+							"ctx2": ctx.Value("ctx2"),
+						})
+					})
+					route1.Middleware(contextMiddleware2()).Post("/middleware2/{id}", func(ctx httpcontract.Context) {
+						ctx.Response().Success().Json(httpcontract.Json{
+							"id":   ctx.Request().Input("id"),
+							"ctx":  ctx.Value("ctx"),
+							"ctx2": ctx.Value("ctx2"),
+						})
 					})
 				})
-				req.Header.Set("Origin", "http://127.0.0.1")
-				req.Header.Set("Access-Control-Request-Method", "GET")
 			},
-			method:     "GET",
-			url:        "/throttle/1",
+			method:     "POST",
+			url:        "/conflict/middleware2/1",
 			expectCode: http.StatusOK,
-		},
-		{
-			name: "Throttle Middleware Blocked",
-			setup: func(req *http.Request) {
-				mockConfig.On("GetString", "cache.prefix").Return("throttle").Twice()
-
-				gin.GlobalMiddleware(middleware.Throttle("test"))
-				gin.Any("/throttle/{id}", func(ctx httpcontract.Context) {
-					ctx.Response().Success().Json(httpcontract.Json{
-						"id": ctx.Request().Input("id"),
-					})
-				})
-				req.Header.Set("Origin", "http://127.0.0.1")
-				req.Header.Set("Access-Control-Request-Method", "GET")
-			},
-			method:     "GET",
-			url:        "/throttle/1",
-			expectCode: http.StatusTooManyRequests,
+			expectBody: "{\"ctx\":null,\"ctx2\":\"World\",\"id\":\"1\"}",
 		},
 	}
 	for _, test := range tests {
-		beforeEach()
-		w := httptest.NewRecorder()
-		req, _ := http.NewRequest(test.method, test.url, nil)
-		if test.setup != nil {
-			test.setup(req)
-		}
-		gin.ServeHTTP(w, req)
+		t.Run(test.name, func(t *testing.T) {
+			beforeEach()
+			w := httptest.NewRecorder()
+			req, _ := http.NewRequest(test.method, test.url, nil)
+			if test.setup != nil {
+				test.setup(req)
+			}
+			gin.ServeHTTP(w, req)
 
-		if test.expectBody != "" {
-			assert.Equal(t, test.expectBody, w.Body.String(), test.name)
-		}
-		assert.Equal(t, test.expectCode, w.Code, test.name)
+			if test.expectBody != "" {
+				assert.Equal(t, test.expectBody, w.Body.String(), test.name)
+			}
+			assert.Equal(t, test.expectCode, w.Code, test.name)
+		})
 	}
+}
+
+func TestThrottle(t *testing.T) {
+	mockConfig := &configmock.Config{}
+	mockConfig.On("GetBool", "app.debug").Return(true).Once()
+	mockConfig.On("GetString", "cache.prefix").Return("throttle").Twice()
+	frameworkhttp.ConfigFacade = mockConfig
+
+	mockCache := &cachemock.Cache{}
+	mockCache.On("Has", mock.Anything).Return(false).Once()
+	mockCache.On("Put", mock.Anything, mock.Anything, mock.Anything).Return(nil).Twice()
+	frameworkhttp.CacheFacade = mockCache
+
+	mockRateLimiter := &httpmock.RateLimiter{}
+	mockRateLimiter.On("Limiter", "test").Return(
+		func(ctx httpcontract.Context) []httpcontract.Limit {
+			return []httpcontract.Limit{
+				func(ctx httpcontract.Context) httpcontract.Limit {
+					return limit.PerMinute(1)
+				}(ctx),
+			}
+		}).Twice()
+	frameworkhttp.RateLimiterFacade = mockRateLimiter
+
+	gin := NewGin(mockConfig)
+	gin.GlobalMiddleware(middleware.Throttle("test"))
+	gin.Get("/throttle/{id}", func(ctx httpcontract.Context) {
+		ctx.Response().Success().Json(httpcontract.Json{
+			"id": ctx.Request().Input("id"),
+		})
+	})
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/throttle/1", nil)
+	gin.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	mockCache.On("Has", mock.Anything).Return(true).Once()
+	mockCache.On("GetInt", mock.Anything, 0).Return(1).Once()
+	mockCache.On("GetInt", mock.Anything, 0).Return(10).Once()
+	mockCache.On("Increment", mock.Anything).Return(10, nil).Once()
+
+	w1 := httptest.NewRecorder()
+	req1, _ := http.NewRequest("GET", "/throttle/1", nil)
+	gin.ServeHTTP(w1, req1)
+	assert.Equal(t, http.StatusTooManyRequests, w1.Code)
+
+	mockConfig.AssertExpectations(t)
 }
 
 func abortMiddleware() httpcontract.Middleware {

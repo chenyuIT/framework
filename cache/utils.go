@@ -1,9 +1,9 @@
 package cache
 
 import (
-	"github.com/chenyuIT/framework/facades"
+	"github.com/chenyuIT/framework/contracts/config"
 )
 
-func prefix() string {
-	return facades.Config.GetString("cache.prefix") + ":"
+func prefix(config config.Config) string {
+	return config.GetString("cache.prefix") + ":"
 }

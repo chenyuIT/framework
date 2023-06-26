@@ -1,16 +1,20 @@
 package schedule
 
 import (
-	"github.com/chenyuIT/framework/facades"
+	"github.com/chenyuIT/framework/contracts/foundation"
 )
+
+const Binding = "goravel.schedule"
 
 type ServiceProvider struct {
 }
 
-func (receiver *ServiceProvider) Register() {
-	facades.Schedule = NewApplication()
+func (receiver *ServiceProvider) Register(app foundation.Application) {
+	app.Singleton(Binding, func(app foundation.Application) (any, error) {
+		return NewApplication(app.MakeArtisan(), app.MakeLog()), nil
+	})
 }
 
-func (receiver *ServiceProvider) Boot() {
+func (receiver *ServiceProvider) Boot(app foundation.Application) {
 
 }

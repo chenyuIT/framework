@@ -3,28 +3,26 @@ package console
 import (
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 
+	configmock "github.com/chenyuIT/framework/contracts/config/mocks"
 	consolemocks "github.com/chenyuIT/framework/contracts/console/mocks"
+	"github.com/chenyuIT/framework/support/carbon"
 	"github.com/chenyuIT/framework/support/file"
-	supporttime "github.com/chenyuIT/framework/support/time"
-	"github.com/chenyuIT/framework/testing/mock"
 )
 
 func TestMigrateMakeCommand(t *testing.T) {
-	now := time.Now()
-	supporttime.SetTestNow(now)
-	up := fmt.Sprintf("database/migrations/%s_%s.%s.sql", now.Format("20060102150405"), "create_users_table", "up")
-	down := fmt.Sprintf("database/migrations/%s_%s.%s.sql", now.Format("20060102150405"), "create_users_table", "down")
+	now := carbon.Now()
+	up := fmt.Sprintf("database/migrations/%s_%s.%s.sql", now.ToShortDateTimeString(), "create_users_table", "up")
+	down := fmt.Sprintf("database/migrations/%s_%s.%s.sql", now.ToShortDateTimeString(), "create_users_table", "down")
 
-	mockConfig := mock.Config()
+	mockConfig := &configmock.Config{}
 	mockConfig.On("GetString", "database.default").Return("mysql").Times(3)
 	mockConfig.On("GetString", "database.connections.mysql.driver").Return("mysql").Once()
 	mockConfig.On("GetString", "database.connections.mysql.charset").Return("utf8mb4").Twice()
 
-	migrateMakeCommand := &MigrateMakeCommand{}
+	migrateMakeCommand := NewMigrateMakeCommand(mockConfig)
 	mockContext := &consolemocks.Context{}
 	mockContext.On("Argument", 0).Return("").Once()
 	assert.Nil(t, migrateMakeCommand.Handle(mockContext))
@@ -35,7 +33,7 @@ func TestMigrateMakeCommand(t *testing.T) {
 	assert.Nil(t, migrateMakeCommand.Handle(mockContext))
 	assert.True(t, file.Exists(up))
 	assert.True(t, file.Exists(down))
-	assert.True(t, file.Remove("database"))
+	assert.Nil(t, file.Remove("database"))
 
 	mockConfig.AssertExpectations(t)
 }

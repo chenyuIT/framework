@@ -20,5 +20,12 @@ func TestControllerMakeCommand(t *testing.T) {
 	err = controllerMakeCommand.Handle(mockContext)
 	assert.Nil(t, err)
 	assert.True(t, file.Exists("app/http/controllers/users_controller.go"))
-	assert.True(t, file.Remove("app"))
+
+	mockContext.On("Argument", 0).Return("User/AuthController").Once()
+	err = controllerMakeCommand.Handle(mockContext)
+	assert.Nil(t, err)
+	assert.True(t, file.Exists("app/http/controllers/User/auth_controller.go"))
+	assert.True(t, file.Contain("app/http/controllers/User/auth_controller.go", "package User"))
+	assert.True(t, file.Contain("app/http/controllers/User/auth_controller.go", "type AuthController struct"))
+	assert.Nil(t, file.Remove("app"))
 }

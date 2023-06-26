@@ -4,4 +4,6 @@ import (
 	"github.com/chenyuIT/framework/contracts/hash"
 )
 
-var Hash hash.Hash
+func Hash() hash.Hash {
+	return App().MakeHash()
+}

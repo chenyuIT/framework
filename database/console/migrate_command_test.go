@@ -3,9 +3,12 @@ package console
 import (
 	"testing"
 
+	"github.com/ory/dockertest/v3"
 	"github.com/stretchr/testify/assert"
 
-	consolemocks "github.com/chenyuIT/framework/contracts/console/mocks"
+	configmock "github.com/chenyuIT/framework/contracts/config/mocks"
+	consolemock "github.com/chenyuIT/framework/contracts/console/mocks"
+	ormcontract "github.com/chenyuIT/framework/contracts/database/orm"
 	"github.com/chenyuIT/framework/database/gorm"
 	"github.com/chenyuIT/framework/database/orm"
 	"github.com/chenyuIT/framework/support/file"
@@ -17,6 +20,22 @@ type Agent struct {
 }
 
 func TestMigrateCommand(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping tests of using docker")
+	}
+
+	var (
+		mockConfig *configmock.Config
+		pool       *dockertest.Pool
+		resource   *dockertest.Resource
+		query      ormcontract.Query
+	)
+
+	beforeEach := func() {
+		pool = nil
+		mockConfig = &configmock.Config{}
+	}
+
 	tests := []struct {
 		name  string
 		setup func()
@@ -24,101 +43,73 @@ func TestMigrateCommand(t *testing.T) {
 		{
 			name: "mysql",
 			setup: func() {
-				mysqlPool, mysqlResource, mysqlQuery, err := gorm.MysqlDocker()
+				var err error
+				docker := gorm.NewMysqlDocker()
+				pool, resource, query, err = docker.New()
 				assert.Nil(t, err)
-
+				mockConfig = docker.MockConfig
 				createMysqlMigrations()
-				migrateCommand := &MigrateCommand{}
-				mockContext := &consolemocks.Context{}
-				err = migrateCommand.Handle(mockContext)
-				assert.Nil(t, err)
-
-				var agent Agent
-				err = mysqlQuery.Where("name", "goravel").First(&agent)
-				assert.Nil(t, err)
-				assert.True(t, agent.ID > 0)
-
-				removeMigrations()
-				err = mysqlPool.Purge(mysqlResource)
-				assert.Nil(t, err)
 			},
 		},
 		{
 			name: "postgresql",
 			setup: func() {
-				postgresqlPool, postgresqlResource, postgresqlDB, err := gorm.PostgresqlDocker()
+				var err error
+				docker := gorm.NewPostgresqlDocker()
+				pool, resource, query, err = docker.New()
 				assert.Nil(t, err)
-
+				mockConfig = docker.MockConfig
 				createPostgresqlMigrations()
-				migrateCommand := &MigrateCommand{}
-				mockContext := &consolemocks.Context{}
-				err = migrateCommand.Handle(mockContext)
-				assert.Nil(t, err)
-
-				var agent Agent
-				err = postgresqlDB.Where("name", "goravel").First(&agent)
-				assert.Nil(t, err)
-				assert.True(t, agent.ID > 0)
-
-				removeMigrations()
-				err = postgresqlPool.Purge(postgresqlResource)
-				assert.Nil(t, err)
 			},
 		},
 		{
 			name: "sqlserver",
 			setup: func() {
-				sqlserverPool, sqlserverResource, sqlserverDB, err := gorm.SqlserverDocker()
+				var err error
+				docker := gorm.NewSqlserverDocker()
+				pool, resource, query, err = docker.New()
 				assert.Nil(t, err)
-
+				mockConfig = docker.MockConfig
 				createSqlserverMigrations()
-				migrateCommand := &MigrateCommand{}
-				mockContext := &consolemocks.Context{}
-				err = migrateCommand.Handle(mockContext)
-				assert.Nil(t, err)
-
-				var agent Agent
-				err = sqlserverDB.Where("name", "goravel").First(&agent)
-				assert.Nil(t, err)
-				assert.True(t, agent.ID > 0)
-
-				removeMigrations()
-				err = sqlserverPool.Purge(sqlserverResource)
-				assert.Nil(t, err)
 			},
 		},
 		{
 			name: "sqlite",
 			setup: func() {
-				_, _, sqliteDB, err := gorm.SqliteDocker("goravel")
+				var err error
+				docker := gorm.NewSqliteDocker("goravel")
+				_, _, query, err = docker.New()
 				assert.Nil(t, err)
-
+				mockConfig = docker.MockConfig
 				createSqliteMigrations()
-				migrateCommand := &MigrateCommand{}
-				mockContext := &consolemocks.Context{}
-				err = migrateCommand.Handle(mockContext)
-				assert.Nil(t, err)
-
-				var agent Agent
-				err = sqliteDB.Where("name", "goravel").First(&agent)
-				assert.Nil(t, err)
-				assert.True(t, agent.ID > 0)
-
-				removeMigrations()
-				file.Remove("goravel")
 			},
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			beforeEach()
 			test.setup()
+
+			migrateCommand := NewMigrateCommand(mockConfig)
+			mockContext := &consolemock.Context{}
+			assert.Nil(t, migrateCommand.Handle(mockContext))
+
+			var agent Agent
+			assert.Nil(t, query.Where("name", "goravel").First(&agent))
+			assert.True(t, agent.ID > 0)
+
+			if pool != nil {
+				assert.Nil(t, pool.Purge(resource))
+			}
+
+			removeMigrations()
 		})
 	}
 }
 
 func createMysqlMigrations() {
-	file.Create("database/migrations/20230311160527_create_agents_table.up.sql",
+	_ = file.Create("database/migrations/20230311160527_create_agents_table.up.sql",
 		`CREATE TABLE agents (
   id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   name varchar(255) NOT NULL,
@@ -130,10 +121,13 @@ func createMysqlMigrations() {
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 INSERT INTO agents (name, created_at, updated_at) VALUES ('goravel', '2023-03-11 16:07:41', '2023-03-11 16:07:45');
 `)
+	_ = file.Create("database/migrations/20230311160527_create_agents_table.down.sql",
+		`DROP TABLE agents;
+`)
 }
 
 func createPostgresqlMigrations() {
-	file.Create("database/migrations/20230311160527_create_agents_table.up.sql",
+	_ = file.Create("database/migrations/20230311160527_create_agents_table.up.sql",
 		`CREATE TABLE agents (
   id SERIAL PRIMARY KEY NOT NULL,
   name varchar(255) NOT NULL,
@@ -142,10 +136,13 @@ func createPostgresqlMigrations() {
 );
 INSERT INTO agents (name, created_at, updated_at) VALUES ('goravel', '2023-03-11 16:07:41', '2023-03-11 16:07:45');
 `)
+	_ = file.Create("database/migrations/20230311160527_create_agents_table.down.sql",
+		`DROP TABLE agents;
+`)
 }
 
 func createSqlserverMigrations() {
-	file.Create("database/migrations/20230311160527_create_agents_table.up.sql",
+	_ = file.Create("database/migrations/20230311160527_create_agents_table.up.sql",
 		`CREATE TABLE agents (
   id bigint NOT NULL IDENTITY(1,1),
   name varchar(255) NOT NULL,
@@ -155,10 +152,13 @@ func createSqlserverMigrations() {
 );
 INSERT INTO agents (name, created_at, updated_at) VALUES ('goravel', '2023-03-11 16:07:41', '2023-03-11 16:07:45');
 `)
+	_ = file.Create("database/migrations/20230311160527_create_agents_table.down.sql",
+		`DROP TABLE agents;
+`)
 }
 
 func createSqliteMigrations() {
-	file.Create("database/migrations/20230311160527_create_agents_table.up.sql",
+	_ = file.Create("database/migrations/20230311160527_create_agents_table.up.sql",
 		`CREATE TABLE agents (
   id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
   name varchar(255) NOT NULL,
@@ -167,8 +167,12 @@ func createSqliteMigrations() {
 );
 INSERT INTO agents (name, created_at, updated_at) VALUES ('goravel', '2023-03-11 16:07:41', '2023-03-11 16:07:45');
 `)
+	_ = file.Create("database/migrations/20230311160527_create_agents_table.down.sql",
+		`DROP TABLE agents;
+`)
 }
 
 func removeMigrations() {
-	file.Remove("database")
+	_ = file.Remove("database")
+	_ = file.Remove("goravel")
 }

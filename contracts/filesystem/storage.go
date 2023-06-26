@@ -22,7 +22,9 @@ type Driver interface {
 	Exists(file string) bool
 	Files(path string) ([]string, error)
 	Get(file string) (string, error)
+	LastModified(file string) (time.Time, error)
 	MakeDirectory(directory string) error
+	MimeType(file string) (string, error)
 	Missing(file string) bool
 	Move(oldFile, newFile string) error
 	Path(file string) string
@@ -38,11 +40,14 @@ type Driver interface {
 //go:generate mockery --name=File
 type File interface {
 	Disk(disk string) File
+	Extension() (string, error)
 	File() string
-	Store(path string) (string, error)
-	StoreAs(path string, name string) (string, error)
 	GetClientOriginalName() string
 	GetClientOriginalExtension() string
 	HashName(path ...string) string
-	Extension() (string, error)
+	LastModified() (time.Time, error)
+	MimeType() (string, error)
+	Size() (int64, error)
+	Store(path string) (string, error)
+	StoreAs(path string, name string) (string, error)
 }

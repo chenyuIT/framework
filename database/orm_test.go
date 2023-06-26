@@ -6,6 +6,7 @@ import (
 	"log"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
 	contractsorm "github.com/chenyuIT/framework/contracts/database/orm"
@@ -30,103 +31,131 @@ type User struct {
 
 type OrmSuite struct {
 	suite.Suite
+	orm *OrmImpl
 }
 
 var (
-	testMysqlDB      contractsorm.Query
-	testPostgresqlDB contractsorm.Query
-	testSqliteDB     contractsorm.Query
-	testSqlserverDB  contractsorm.Query
+	testMysqlQuery      contractsorm.Query
+	testPostgresqlQuery contractsorm.Query
+	testSqliteQuery     contractsorm.Query
+	testSqlserverDB     contractsorm.Query
 )
 
 func TestOrmSuite(t *testing.T) {
-	mysqlPool, mysqlDocker, mysqlDB, err := gorm.MysqlDocker()
+	if testing.Short() {
+		t.Skip("Skipping tests of using docker")
+	}
+
+	mysqlDocker := gorm.NewMysqlDocker()
+	mysqlPool, mysqlResource, mysqlQuery, err := mysqlDocker.New()
 	if err != nil {
 		log.Fatalf("Get mysql error: %s", err)
 	}
-	testMysqlDB = mysqlDB
+	testMysqlQuery = mysqlQuery
 
-	postgresqlPool, postgresqlDocker, postgresqlDB, err := gorm.PostgresqlDocker()
+	postgresqlDocker := gorm.NewPostgresqlDocker()
+	postgresqlPool, postgresqlResource, postgresqlQuery, err := postgresqlDocker.New()
 	if err != nil {
 		log.Fatalf("Get postgresql error: %s", err)
 	}
-	testPostgresqlDB = postgresqlDB
+	testPostgresqlQuery = postgresqlQuery
 
-	_, _, sqliteDB, err := gorm.SqliteDocker("goravel")
+	sqliteDocker := gorm.NewSqliteDocker("goravel")
+	_, _, sqliteQuery, err := sqliteDocker.New()
 	if err != nil {
 		log.Fatalf("Get sqlite error: %s", err)
 	}
-	testSqliteDB = sqliteDB
+	testSqliteQuery = sqliteQuery
 
-	sqlserverPool, sqlserverDocker, sqlserverDB, err := gorm.SqlserverDocker()
+	sqlserverDocker := gorm.NewSqlserverDocker()
+	sqlserverPool, sqlserverResource, sqlserverQuery, err := sqlserverDocker.New()
 	if err != nil {
 		log.Fatalf("Get sqlserver error: %s", err)
 	}
-	testSqlserverDB = sqlserverDB
+	testSqlserverDB = sqlserverQuery
 
 	suite.Run(t, new(OrmSuite))
 
-	file.Remove("goravel")
+	assert.Nil(t, file.Remove("goravel"))
 
-	if err := mysqlPool.Purge(mysqlDocker); err != nil {
+	if err := mysqlPool.Purge(mysqlResource); err != nil {
 		log.Fatalf("Could not purge resource: %s", err)
 	}
-	if err := postgresqlPool.Purge(postgresqlDocker); err != nil {
+	if err := postgresqlPool.Purge(postgresqlResource); err != nil {
 		log.Fatalf("Could not purge resource: %s", err)
 	}
-	if err := sqlserverPool.Purge(sqlserverDocker); err != nil {
+	if err := sqlserverPool.Purge(sqlserverResource); err != nil {
 		log.Fatalf("Could not purge resource: %s", err)
 	}
+
 }
 
 func (s *OrmSuite) SetupTest() {
-
+	s.orm = &OrmImpl{
+		ctx:   context.Background(),
+		query: testMysqlQuery,
+		queries: map[string]contractsorm.Query{
+			contractsorm.DriverMysql.String():      testMysqlQuery,
+			contractsorm.DriverPostgresql.String(): testPostgresqlQuery,
+			contractsorm.DriverSqlite.String():     testSqliteQuery,
+			contractsorm.DriverSqlserver.String():  testSqlserverDB,
+		},
+	}
 }
 
 func (s *OrmSuite) TestConnection() {
-	testOrm := newTestOrm()
 	for _, connection := range connections {
-		s.NotNil(testOrm.Connection(connection.String()))
+		s.NotNil(s.orm.Connection(connection.String()))
 	}
 }
 
 func (s *OrmSuite) TestDB() {
-	testOrm := newTestOrm()
-	db, err := testOrm.DB()
+	db, err := s.orm.DB()
 	s.NotNil(db)
 	s.Nil(err)
 
 	for _, connection := range connections {
-		db, err := testOrm.Connection(connection.String()).DB()
+		db, err := s.orm.Connection(connection.String()).DB()
 		s.NotNil(db)
 		s.Nil(err)
 	}
 }
 
 func (s *OrmSuite) TestQuery() {
-	testOrm := newTestOrm()
-	s.NotNil(testOrm.Query())
+	s.NotNil(s.orm.Query())
 
 	s.NotPanics(func() {
 		for i := 0; i < 5; i++ {
 			go func() {
 				var user User
-				_ = testOrm.Query().Find(&user, 1)
+				_ = s.orm.Query().Find(&user, 1)
 			}()
 		}
 	})
 
 	for _, connection := range connections {
-		s.NotNil(testOrm.Connection(connection.String()).Query())
+		s.NotNil(s.orm.Connection(connection.String()).Query())
+	}
+}
+
+func (s *OrmSuite) TestObserve() {
+	s.orm.Observe(User{}, &UserObserver{})
+
+	s.Equal([]orm.Observer{
+		{Model: User{}, Observer: &UserObserver{}},
+	}, orm.Observers)
+
+	for _, connection := range connections {
+		user := User{Name: "observer_name"}
+		s.EqualError(s.orm.Connection(connection.String()).Query().Create(&user), "error")
 	}
 }
 
 func (s *OrmSuite) TestTransactionSuccess() {
-	testOrm := newTestOrm()
 	for _, connection := range connections {
 		user := User{Name: "transaction_success_user", Avatar: "transaction_success_avatar"}
 		user1 := User{Name: "transaction_success_user1", Avatar: "transaction_success_avatar1"}
-		s.Nil(testOrm.Connection(connection.String()).Transaction(func(tx contractsorm.Transaction) error {
+		s.Nil(s.orm.Connection(connection.String()).Transaction(func(tx contractsorm.Transaction) error {
 			s.Nil(tx.Create(&user))
 			s.Nil(tx.Create(&user1))
 
@@ -134,15 +163,14 @@ func (s *OrmSuite) TestTransactionSuccess() {
 		}))
 
 		var user2, user3 User
-		s.Nil(testOrm.Connection(connection.String()).Query().Find(&user2, user.ID))
-		s.Nil(testOrm.Connection(connection.String()).Query().Find(&user3, user1.ID))
+		s.Nil(s.orm.Connection(connection.String()).Query().Find(&user2, user.ID))
+		s.Nil(s.orm.Connection(connection.String()).Query().Find(&user3, user1.ID))
 	}
 }
 
 func (s *OrmSuite) TestTransactionError() {
-	testOrm := newTestOrm()
 	for _, connection := range connections {
-		s.NotNil(testOrm.Connection(connection.String()).Transaction(func(tx contractsorm.Transaction) error {
+		s.NotNil(s.orm.Connection(connection.String()).Transaction(func(tx contractsorm.Transaction) error {
 			user := User{Name: "transaction_error_user", Avatar: "transaction_error_avatar"}
 			s.Nil(tx.Create(&user))
 
@@ -153,20 +181,58 @@ func (s *OrmSuite) TestTransactionError() {
 		}))
 
 		var users []User
-		s.Nil(testOrm.Connection(connection.String()).Query().Find(&users))
+		s.Nil(s.orm.Connection(connection.String()).Query().Find(&users))
 		s.Equal(0, len(users))
 	}
 }
 
-func newTestOrm() *Orm {
-	return &Orm{
-		ctx:      context.Background(),
-		instance: testMysqlDB,
-		instances: map[string]contractsorm.Query{
-			contractsorm.DriverMysql.String():      testMysqlDB,
-			contractsorm.DriverPostgresql.String(): testPostgresqlDB,
-			contractsorm.DriverSqlite.String():     testSqliteDB,
-			contractsorm.DriverSqlserver.String():  testSqlserverDB,
-		},
+type UserObserver struct{}
+
+func (u *UserObserver) Retrieved(event contractsorm.Event) error {
+	return nil
+}
+
+func (u *UserObserver) Creating(event contractsorm.Event) error {
+	name := event.GetAttribute("name")
+	if name != nil && name.(string) == "observer_name" {
+		return errors.New("error")
 	}
+
+	return nil
+}
+
+func (u *UserObserver) Created(event contractsorm.Event) error {
+	return nil
+}
+
+func (u *UserObserver) Updating(event contractsorm.Event) error {
+	return nil
+}
+
+func (u *UserObserver) Updated(event contractsorm.Event) error {
+	return nil
+}
+
+func (u *UserObserver) Saving(event contractsorm.Event) error {
+	return nil
+}
+
+func (u *UserObserver) Saved(event contractsorm.Event) error {
+	return nil
+}
+
+func (u *UserObserver) Deleting(event contractsorm.Event) error {
+	return nil
+}
+
+func (u *UserObserver) Deleted(event contractsorm.Event) error {
+	return nil
+}
+
+func (u *UserObserver) ForceDeleting(event contractsorm.Event) error {
+	return nil
+}
+
+func (u *UserObserver) ForceDeleted(event contractsorm.Event) error {
+	return nil
 }

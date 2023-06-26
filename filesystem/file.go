@@ -4,22 +4,24 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"mime/multipart"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
+	"time"
 
+	"github.com/chenyuIT/framework/contracts/config"
 	"github.com/chenyuIT/framework/contracts/filesystem"
-	"github.com/chenyuIT/framework/facades"
 	supportfile "github.com/chenyuIT/framework/support/file"
 	"github.com/chenyuIT/framework/support/str"
 )
 
 type File struct {
-	disk     string
-	file     string
-	filename string
+	config  config.Config
+	disk    string
+	path    string
+	name    string
+	storage filesystem.Storage
 }
 
 func NewFile(file string) (*File, error) {
@@ -27,9 +29,13 @@ func NewFile(file string) (*File, error) {
 		return nil, errors.New("file doesn't exist")
 	}
 
-	disk := facades.Config.GetString("filesystems.default")
-
-	return &File{disk: disk, file: file, filename: path.Base(file)}, nil
+	return &File{
+		config:  ConfigFacade,
+		disk:    ConfigFacade.GetString("filesystems.default"),
+		path:    file,
+		name:    filepath.Base(file),
+		storage: StorageFacade,
+	}, nil
 }
 
 func NewFileFromRequest(fileHeader *multipart.FileHeader) (*File, error) {
@@ -37,23 +43,35 @@ func NewFileFromRequest(fileHeader *multipart.FileHeader) (*File, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer src.Close()
+	defer func(src multipart.File) {
+		if err = src.Close(); err != nil {
+			panic(err)
+		}
+	}(src)
 
-	tempFileName := fmt.Sprintf("%s_*%s", facades.Config.GetString("app.name"), path.Ext(fileHeader.Filename))
-	tempFile, err := ioutil.TempFile(os.TempDir(), tempFileName)
+	tempFileName := fmt.Sprintf("%s_*%s", ConfigFacade.GetString("app.name"), filepath.Ext(fileHeader.Filename))
+	tempFile, err := os.CreateTemp(os.TempDir(), tempFileName)
 	if err != nil {
 		return nil, err
 	}
-	defer tempFile.Close()
+	defer func(tempFile *os.File) {
+		if err = tempFile.Close(); err != nil {
+			panic(err)
+		}
+	}(tempFile)
 
 	_, err = io.Copy(tempFile, src)
 	if err != nil {
 		return nil, err
 	}
 
-	disk := facades.Config.GetString("filesystems.default")
-
-	return &File{disk: disk, file: tempFile.Name(), filename: fileHeader.Filename}, nil
+	return &File{
+		config:  ConfigFacade,
+		disk:    ConfigFacade.GetString("filesystems.default"),
+		path:    tempFile.Name(),
+		name:    fileHeader.Filename,
+		storage: StorageFacade,
+	}, nil
 }
 
 func (f *File) Disk(disk string) filesystem.File {
@@ -62,24 +80,20 @@ func (f *File) Disk(disk string) filesystem.File {
 	return f
 }
 
+func (f *File) Extension() (string, error) {
+	return supportfile.Extension(f.path)
+}
+
 func (f *File) File() string {
-	return f.file
-}
-
-func (f *File) Store(path string) (string, error) {
-	return facades.Storage.Disk(f.disk).PutFile(path, f)
-}
-
-func (f *File) StoreAs(path string, name string) (string, error) {
-	return facades.Storage.Disk(f.disk).PutFileAs(path, f, name)
+	return f.path
 }
 
 func (f *File) GetClientOriginalName() string {
-	return f.filename
+	return f.name
 }
 
 func (f *File) GetClientOriginalExtension() string {
-	return supportfile.ClientOriginalExtension(f.filename)
+	return supportfile.ClientOriginalExtension(f.name)
 }
 
 func (f *File) HashName(path ...string) string {
@@ -88,7 +102,7 @@ func (f *File) HashName(path ...string) string {
 		realPath = strings.TrimRight(path[0], "/") + "/"
 	}
 
-	extension, _ := supportfile.Extension(f.file, true)
+	extension, _ := supportfile.Extension(f.path, true)
 	if extension == "" {
 		return realPath + str.Random(40)
 	}
@@ -96,6 +110,22 @@ func (f *File) HashName(path ...string) string {
 	return realPath + str.Random(40) + "." + extension
 }
 
-func (f *File) Extension() (string, error) {
-	return supportfile.Extension(f.file)
+func (f *File) LastModified() (time.Time, error) {
+	return supportfile.LastModified(f.path, f.config.GetString("app.timezone"))
+}
+
+func (f *File) MimeType() (string, error) {
+	return supportfile.MimeType(f.path)
+}
+
+func (f *File) Size() (int64, error) {
+	return supportfile.Size(f.path)
+}
+
+func (f *File) Store(path string) (string, error) {
+	return f.storage.Disk(f.disk).PutFile(path, f)
+}
+
+func (f *File) StoreAs(path string, name string) (string, error) {
+	return f.storage.Disk(f.disk).PutFileAs(path, f, name)
 }

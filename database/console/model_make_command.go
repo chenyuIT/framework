@@ -2,6 +2,7 @@ package console
 
 import (
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/gookit/color"
@@ -13,6 +14,10 @@ import (
 )
 
 type ModelMakeCommand struct {
+}
+
+func NewModelMakeCommand() *ModelMakeCommand {
+	return &ModelMakeCommand{}
 }
 
 // Signature The name and signature of the console command.
@@ -41,7 +46,10 @@ func (receiver *ModelMakeCommand) Handle(ctx console.Context) error {
 		return nil
 	}
 
-	file.Create(receiver.getPath(name), receiver.populateStub(receiver.getStub(), name))
+	if err := file.Create(receiver.getPath(name), receiver.populateStub(receiver.getStub(), name)); err != nil {
+		return err
+	}
+
 	color.Greenln("Model created successfully")
 
 	return nil
@@ -53,7 +61,10 @@ func (receiver *ModelMakeCommand) getStub() string {
 
 // populateStub Populate the place-holders in the command stub.
 func (receiver *ModelMakeCommand) populateStub(stub string, name string) string {
-	stub = strings.ReplaceAll(stub, "DummyModel", str.Case2Camel(name))
+	modelName, packageName, _ := receiver.parseName(name)
+
+	stub = strings.ReplaceAll(stub, "DummyModel", str.Case2Camel(modelName))
+	stub = strings.ReplaceAll(stub, "DummyPackage", packageName)
 
 	return stub
 }
@@ -62,5 +73,26 @@ func (receiver *ModelMakeCommand) populateStub(stub string, name string) string 
 func (receiver *ModelMakeCommand) getPath(name string) string {
 	pwd, _ := os.Getwd()
 
-	return pwd + "/app/models/" + str.Camel2Case(name) + ".go"
+	modelName, _, folderPath := receiver.parseName(name)
+
+	return filepath.Join(pwd, "app", "models", folderPath, str.Camel2Case(modelName)+".go")
+}
+
+// parseName Parse the name to get the model name, package name and folder path.
+func (receiver *ModelMakeCommand) parseName(name string) (string, string, string) {
+	name = strings.TrimSuffix(name, ".go")
+
+	segments := strings.Split(name, "/")
+
+	modelName := segments[len(segments)-1]
+
+	packageName := "models"
+	folderPath := ""
+
+	if len(segments) > 1 {
+		folderPath = filepath.Join(segments[:len(segments)-1]...)
+		packageName = segments[len(segments)-2]
+	}
+
+	return modelName, packageName, folderPath
 }

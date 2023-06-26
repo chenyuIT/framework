@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/chenyuIT/framework/contracts/auth/access"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/chenyuIT/framework/contracts/auth/access"
 )
 
 type contextKey int

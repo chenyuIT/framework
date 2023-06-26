@@ -3,6 +3,7 @@ package config
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/chenyuIT/framework/support/file"
@@ -14,13 +15,13 @@ type ApplicationTestSuite struct {
 }
 
 func TestApplicationTestSuite(t *testing.T) {
-	file.Create(".env", "APP_KEY=12345678901234567890123456789012")
+	assert.Nil(t, file.Create(".env", "APP_KEY=12345678901234567890123456789012"))
 
 	suite.Run(t, &ApplicationTestSuite{
 		config: NewApplication(".env"),
 	})
 
-	file.Remove(".env")
+	assert.Nil(t, file.Remove(".env"))
 }
 
 func (s *ApplicationTestSuite) SetupTest() {
@@ -38,6 +39,15 @@ func (s *ApplicationTestSuite) TestAdd() {
 	})
 
 	s.Equal("local", s.config.GetString("app.env"))
+
+	s.config.Add("path.with.dot.case1", "value1")
+	s.Equal("value1", s.config.GetString("path.with.dot.case1"))
+
+	s.config.Add("path.with.dot.case2", "value2")
+	s.Equal("value2", s.config.GetString("path.with.dot.case2"))
+
+	s.config.Add("path.with.dot", map[string]any{"case3": "value3"})
+	s.Equal("value3", s.config.GetString("path.with.dot.case3"))
 }
 
 func (s *ApplicationTestSuite) TestGet() {

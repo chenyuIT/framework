@@ -5,36 +5,49 @@ import (
 	"os"
 	"strings"
 
+	"github.com/chenyuIT/framework/contracts/config"
 	"github.com/chenyuIT/framework/contracts/database/orm"
-	"github.com/chenyuIT/framework/facades"
+	"github.com/chenyuIT/framework/support/carbon"
 	"github.com/chenyuIT/framework/support/file"
-	supporttime "github.com/chenyuIT/framework/support/time"
 )
 
 type MigrateCreator struct {
+	config config.Config
 }
 
-//Create a new migration
-func (receiver MigrateCreator) Create(name string, table string, create bool) {
+func NewMigrateCreator(config config.Config) *MigrateCreator {
+	return &MigrateCreator{
+		config: config,
+	}
+}
+
+// Create a new migration
+func (receiver MigrateCreator) Create(name string, table string, create bool) error {
 	// First we will get the stub file for the migration, which serves as a type
 	// of template for the migration. Once we have those we will populate the
 	// various place-holders, save the file, and run the post create event.
 	upStub, downStub := receiver.getStub(table, create)
 
 	//Create the up.sql file.
-	file.Create(receiver.getPath(name, "up"), receiver.populateStub(upStub, table))
+	if err := file.Create(receiver.getPath(name, "up"), receiver.populateStub(upStub, table)); err != nil {
+		return err
+	}
 
 	//Create the down.sql file.
-	file.Create(receiver.getPath(name, "down"), receiver.populateStub(downStub, table))
+	if err := file.Create(receiver.getPath(name, "down"), receiver.populateStub(downStub, table)); err != nil {
+		return err
+	}
+
+	return nil
 }
 
-//getStub Get the migration stub file.
+// getStub Get the migration stub file.
 func (receiver MigrateCreator) getStub(table string, create bool) (string, string) {
 	if table == "" {
 		return "", ""
 	}
 
-	driver := facades.Config.GetString("database.connections." + facades.Config.GetString("database.default") + ".driver")
+	driver := receiver.config.GetString("database.connections." + receiver.config.GetString("database.default") + ".driver")
 	switch orm.Driver(driver) {
 	case orm.DriverPostgresql:
 		if create {
@@ -63,9 +76,9 @@ func (receiver MigrateCreator) getStub(table string, create bool) (string, strin
 	}
 }
 
-//populateStub Populate the place-holders in the migration stub.
+// populateStub Populate the place-holders in the migration stub.
 func (receiver MigrateCreator) populateStub(stub string, table string) string {
-	stub = strings.ReplaceAll(stub, "DummyDatabaseCharset", facades.Config.GetString("database.connections."+facades.Config.GetString("database.default")+".charset"))
+	stub = strings.ReplaceAll(stub, "DummyDatabaseCharset", receiver.config.GetString("database.connections."+receiver.config.GetString("database.default")+".charset"))
 
 	if table != "" {
 		stub = strings.ReplaceAll(stub, "DummyTable", table)
@@ -74,9 +87,9 @@ func (receiver MigrateCreator) populateStub(stub string, table string) string {
 	return stub
 }
 
-//getPath Get the full path to the migration.
+// getPath Get the full path to the migration.
 func (receiver MigrateCreator) getPath(name string, category string) string {
 	pwd, _ := os.Getwd()
 
-	return fmt.Sprintf("%s/database/migrations/%s_%s.%s.sql", pwd, supporttime.Now().Format("20060102150405"), name, category)
+	return fmt.Sprintf("%s/database/migrations/%s_%s.%s.sql", pwd, carbon.Now().ToShortDateTimeString(), name, category)
 }

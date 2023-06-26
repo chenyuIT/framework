@@ -3,11 +3,9 @@ package route
 import (
 	"bytes"
 	"crypto/tls"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -17,16 +15,72 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 
-	configmocks "github.com/chenyuIT/framework/contracts/config/mocks"
+	configmock "github.com/chenyuIT/framework/contracts/config/mocks"
+	filesystemmock "github.com/chenyuIT/framework/contracts/filesystem/mocks"
 	httpcontract "github.com/chenyuIT/framework/contracts/http"
+	logmock "github.com/chenyuIT/framework/contracts/log/mocks"
 	"github.com/chenyuIT/framework/contracts/validation"
-	"github.com/chenyuIT/framework/testing/mock"
+	validationmock "github.com/chenyuIT/framework/contracts/validation/mocks"
+	frameworkfilesystem "github.com/chenyuIT/framework/filesystem"
+	frameworkhttp "github.com/chenyuIT/framework/http"
 )
 
+func TestFallback(t *testing.T) {
+	var (
+		gin        *Gin
+		mockConfig *configmock.Config
+	)
+	beforeEach := func() {
+		mockConfig = &configmock.Config{}
+		mockConfig.On("GetBool", "app.debug").Return(true).Once()
+
+		gin = NewGin(mockConfig)
+	}
+	tests := []struct {
+		name       string
+		setup      func(req *http.Request)
+		method     string
+		url        string
+		expectCode int
+		expectBody string
+	}{
+		{
+			name: "success",
+			setup: func(req *http.Request) {
+				gin.Fallback(func(ctx httpcontract.Context) {
+					ctx.Response().String(404, "not found")
+				})
+			},
+			method:     "GET",
+			url:        "/fallback",
+			expectCode: http.StatusNotFound,
+			expectBody: "not found",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			beforeEach()
+			w := httptest.NewRecorder()
+			req, _ := http.NewRequest(test.method, test.url, nil)
+			if test.setup != nil {
+				test.setup(req)
+			}
+			gin.ServeHTTP(w, req)
+
+			if test.expectBody != "" {
+				assert.Equal(t, test.expectBody, w.Body.String(), test.name)
+			}
+			assert.Equal(t, test.expectCode, w.Code, test.name)
+		})
+	}
+}
+
 func TestRun(t *testing.T) {
-	var mockConfig *configmocks.Config
+	var mockConfig *configmock.Config
 	var route *Gin
 
 	tests := []struct {
@@ -75,10 +129,12 @@ func TestRun(t *testing.T) {
 					assert.Nil(t, route.Run())
 				}()
 
+				time.Sleep(1 * time.Second)
+
 				return nil
 			},
 			host: "127.0.0.1",
-			port: "3001",
+			port: "3031",
 		},
 		{
 			name: "use custom host",
@@ -91,15 +147,15 @@ func TestRun(t *testing.T) {
 
 				return nil
 			},
-			host: "127.0.0.1:3002",
+			host: "127.0.0.1:3032",
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			mockConfig = mock.Config()
+			mockConfig = &configmock.Config{}
 			mockConfig.On("GetBool", "app.debug").Return(true).Once()
-			route = NewGin()
+			route = NewGin(mockConfig)
 			route.Get("/", func(ctx httpcontract.Context) {
 				ctx.Response().Json(200, httpcontract.Json{
 					"Hello": "Goravel",
@@ -115,7 +171,7 @@ func TestRun(t *testing.T) {
 				assert.Nil(t, err)
 				defer resp.Body.Close()
 
-				body, err := ioutil.ReadAll(resp.Body)
+				body, err := io.ReadAll(resp.Body)
 				assert.Nil(t, err)
 				assert.Equal(t, "{\"Hello\":\"Goravel\"}", string(body))
 			}
@@ -125,7 +181,7 @@ func TestRun(t *testing.T) {
 }
 
 func TestRunTLS(t *testing.T) {
-	var mockConfig *configmocks.Config
+	var mockConfig *configmock.Config
 	var route *Gin
 
 	tests := []struct {
@@ -200,9 +256,9 @@ func TestRunTLS(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			mockConfig = mock.Config()
+			mockConfig = &configmock.Config{}
 			mockConfig.On("GetBool", "app.debug").Return(true).Once()
-			route = NewGin()
+			route = NewGin(mockConfig)
 			route.Get("/", func(ctx httpcontract.Context) {
 				ctx.Response().Json(200, httpcontract.Json{
 					"Hello": "Goravel",
@@ -222,7 +278,7 @@ func TestRunTLS(t *testing.T) {
 				assert.Nil(t, err)
 				defer resp.Body.Close()
 
-				body, err := ioutil.ReadAll(resp.Body)
+				body, err := io.ReadAll(resp.Body)
 				assert.Nil(t, err)
 				assert.Equal(t, "{\"Hello\":\"Goravel\"}", string(body))
 			}
@@ -232,7 +288,7 @@ func TestRunTLS(t *testing.T) {
 }
 
 func TestRunTLSWithCert(t *testing.T) {
-	var mockConfig *configmocks.Config
+	var mockConfig *configmock.Config
 	var route *Gin
 
 	tests := []struct {
@@ -282,9 +338,9 @@ func TestRunTLSWithCert(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			mockConfig = mock.Config()
+			mockConfig = &configmock.Config{}
 			mockConfig.On("GetBool", "app.debug").Return(true).Once()
-			route = NewGin()
+			route = NewGin(mockConfig)
 			route.Get("/", func(ctx httpcontract.Context) {
 				ctx.Response().Json(200, httpcontract.Json{
 					"Hello": "Goravel",
@@ -300,7 +356,7 @@ func TestRunTLSWithCert(t *testing.T) {
 				assert.Nil(t, err)
 				defer resp.Body.Close()
 
-				body, err := ioutil.ReadAll(resp.Body)
+				body, err := io.ReadAll(resp.Body)
 				assert.Nil(t, err)
 				assert.Equal(t, "{\"Hello\":\"Goravel\"}", string(body))
 			}
@@ -313,13 +369,13 @@ func TestGinRequest(t *testing.T) {
 	var (
 		gin        *Gin
 		req        *http.Request
-		mockConfig *configmocks.Config
+		mockConfig *configmock.Config
 	)
 	beforeEach := func() {
-		mockConfig = mock.Config()
+		mockConfig = &configmock.Config{}
 		mockConfig.On("GetBool", "app.debug").Return(true).Once()
 
-		gin = NewGin()
+		gin = NewGin(mockConfig)
 	}
 	tests := []struct {
 		name       string
@@ -329,6 +385,243 @@ func TestGinRequest(t *testing.T) {
 		expectCode int
 		expectBody string
 	}{
+		{
+			name:   "All when Get and query is empty",
+			method: "GET",
+			url:    "/all",
+			setup: func(method, url string) error {
+				gin.Get("/all", func(ctx httpcontract.Context) {
+					ctx.Response().Success().Json(httpcontract.Json{
+						"all": ctx.Request().All(),
+					})
+				})
+
+				req, _ = http.NewRequest(method, url, nil)
+
+				return nil
+			},
+			expectCode: http.StatusOK,
+			expectBody: "{\"all\":{}}",
+		},
+		{
+			name:   "All when Get and query is not empty",
+			method: "GET",
+			url:    "/all?a=1&a=2&b=3",
+			setup: func(method, url string) error {
+				gin.Get("/all", func(ctx httpcontract.Context) {
+					ctx.Response().Success().Json(httpcontract.Json{
+						"all": ctx.Request().All(),
+					})
+				})
+
+				req, _ = http.NewRequest(method, url, nil)
+
+				return nil
+			},
+			expectCode: http.StatusOK,
+			expectBody: "{\"all\":{\"a\":\"1,2\",\"b\":\"3\"}}",
+		},
+		{
+			name:   "All with form when Post",
+			method: "POST",
+			url:    "/all?a=1&a=2&b=3",
+			setup: func(method, url string) error {
+				gin.Post("/all", func(ctx httpcontract.Context) {
+					ctx.Response().Success().Json(httpcontract.Json{
+						"all": ctx.Request().All(),
+					})
+				})
+
+				payload := &bytes.Buffer{}
+				writer := multipart.NewWriter(payload)
+
+				if err := writer.WriteField("b", "4"); err != nil {
+					return err
+				}
+				if err := writer.WriteField("e", "e"); err != nil {
+					return err
+				}
+
+				logo, err := os.Open("../logo.png")
+				if err != nil {
+					return err
+				}
+				defer logo.Close()
+				part1, err := writer.CreateFormFile("file", filepath.Base("../logo.png"))
+				if err != nil {
+					return err
+				}
+
+				if _, err = io.Copy(part1, logo); err != nil {
+					return err
+				}
+
+				if err := writer.Close(); err != nil {
+					return err
+				}
+
+				req, _ = http.NewRequest(method, url, payload)
+				req.Header.Set("Content-Type", writer.FormDataContentType())
+
+				return nil
+			},
+			expectCode: http.StatusOK,
+			expectBody: "{\"all\":{\"a\":\"1,2\",\"b\":\"4\",\"e\":\"e\",\"file\":{\"Filename\":\"logo.png\",\"Header\":{\"Content-Disposition\":[\"form-data; name=\\\"file\\\"; filename=\\\"logo.png\\\"\"],\"Content-Type\":[\"application/octet-stream\"]},\"Size\":16438}}}",
+		},
+		{
+			name:   "All with empty form when Post",
+			method: "POST",
+			url:    "/all?a=1&a=2&b=3",
+			setup: func(method, url string) error {
+				gin.Post("/all", func(ctx httpcontract.Context) {
+					ctx.Response().Success().Json(httpcontract.Json{
+						"all": ctx.Request().All(),
+					})
+				})
+
+				req, _ = http.NewRequest(method, url, nil)
+				req.Header.Set("Content-Type", "multipart/form-data;boundary=0")
+
+				return nil
+			},
+			expectCode: http.StatusOK,
+			expectBody: "{\"all\":{\"a\":\"1,2\",\"b\":\"3\"}}",
+		},
+		{
+			name:   "All with json when Post",
+			method: "POST",
+			url:    "/all?a=1&a=2&name=3",
+			setup: func(method, url string) error {
+				gin.Post("/all", func(ctx httpcontract.Context) {
+					all := ctx.Request().All()
+					type Test struct {
+						Name string
+						Age  int
+					}
+					var test Test
+					_ = ctx.Request().Bind(&test)
+
+					ctx.Response().Success().Json(httpcontract.Json{
+						"all":  all,
+						"name": test.Name,
+						"age":  test.Age,
+					})
+				})
+
+				payload := strings.NewReader(`{
+					"Name": "goravel",
+					"Age": 1
+				}`)
+				req, _ = http.NewRequest(method, url, payload)
+				req.Header.Set("Content-Type", "application/json")
+
+				return nil
+			},
+			expectCode: http.StatusOK,
+			expectBody: "{\"age\":1,\"all\":{\"Age\":1,\"Name\":\"goravel\",\"a\":\"1,2\",\"name\":\"3\"},\"name\":\"goravel\"}",
+		},
+		{
+			name:   "All with error json when Post",
+			method: "POST",
+			url:    "/all?a=1&a=2&name=3",
+			setup: func(method, url string) error {
+				mockLog := &logmock.Log{}
+				frameworkhttp.LogFacade = mockLog
+				mockLog.On("Error", mock.Anything).Twice()
+
+				gin.Post("/all", func(ctx httpcontract.Context) {
+					all := ctx.Request().All()
+					type Test struct {
+						Name string
+						Age  int
+					}
+					var test Test
+					_ = ctx.Request().Bind(&test)
+
+					ctx.Response().Success().Json(httpcontract.Json{
+						"all":  all,
+						"name": test.Name,
+						"age":  test.Age,
+					})
+				})
+
+				payload := strings.NewReader(`{
+					"Name": "goravel",
+					"Age": 1,
+				}`)
+				req, _ = http.NewRequest(method, url, payload)
+				req.Header.Set("Content-Type", "application/json")
+
+				return nil
+			},
+			expectCode: http.StatusOK,
+			expectBody: "{\"age\":0,\"all\":{\"a\":\"1,2\",\"name\":\"3\"},\"name\":\"\"}",
+		},
+		{
+			name:   "All with empty json when Post",
+			method: "POST",
+			url:    "/all?a=1&a=2&name=3",
+			setup: func(method, url string) error {
+				gin.Post("/all", func(ctx httpcontract.Context) {
+					ctx.Response().Success().Json(httpcontract.Json{
+						"all": ctx.Request().All(),
+					})
+				})
+
+				req, _ = http.NewRequest(method, url, nil)
+				req.Header.Set("Content-Type", "application/json")
+
+				return nil
+			},
+			expectCode: http.StatusOK,
+			expectBody: "{\"all\":{\"a\":\"1,2\",\"name\":\"3\"}}",
+		},
+		{
+			name:   "All with json when Put",
+			method: "PUT",
+			url:    "/all?a=1&a=2&b=3",
+			setup: func(method, url string) error {
+				gin.Put("/all", func(ctx httpcontract.Context) {
+					ctx.Response().Success().Json(httpcontract.Json{
+						"all": ctx.Request().All(),
+					})
+				})
+
+				payload := strings.NewReader(`{
+					"b": 4,
+					"e": "e"
+				}`)
+				req, _ = http.NewRequest(method, url, payload)
+				req.Header.Set("Content-Type", "application/json")
+
+				return nil
+			},
+			expectCode: http.StatusOK,
+			expectBody: "{\"all\":{\"a\":\"1,2\",\"b\":4,\"e\":\"e\"}}",
+		},
+		{
+			name:   "All with json when Delete",
+			method: "DELETE",
+			url:    "/all?a=1&a=2&b=3",
+			setup: func(method, url string) error {
+				gin.Delete("/all", func(ctx httpcontract.Context) {
+					ctx.Response().Success().Json(httpcontract.Json{
+						"all": ctx.Request().All(),
+					})
+				})
+
+				payload := strings.NewReader(`{
+					"b": 4,
+					"e": "e"
+				}`)
+				req, _ = http.NewRequest(method, url, payload)
+				req.Header.Set("Content-Type", "application/json")
+
+				return nil
+			},
+			expectCode: http.StatusOK,
+			expectBody: "{\"all\":{\"a\":\"1,2\",\"b\":4,\"e\":\"e\"}}",
+		},
 		{
 			name:   "Methods",
 			method: "GET",
@@ -365,7 +658,7 @@ func TestGinRequest(t *testing.T) {
 			url:    "/headers",
 			setup: func(method, url string) error {
 				gin.Get("/headers", func(ctx httpcontract.Context) {
-					str, _ := json.Marshal(ctx.Request().Headers())
+					str, _ := sonic.Marshal(ctx.Request().Headers())
 					ctx.Response().Success().String(string(str))
 				})
 
@@ -455,6 +748,68 @@ func TestGinRequest(t *testing.T) {
 			},
 			expectCode: http.StatusOK,
 			expectBody: "{\"id\":\"4\"}",
+		},
+		{
+			name:   "Input - from json, then Bind",
+			method: "POST",
+			url:    "/input/json/1?id=2",
+			setup: func(method, url string) error {
+				gin.Post("/input/json/{id}", func(ctx httpcontract.Context) {
+					id := ctx.Request().Input("id")
+					var data struct {
+						Name string `form:"name" json:"name"`
+					}
+					_ = ctx.Request().Bind(&data)
+					ctx.Response().Success().Json(httpcontract.Json{
+						"id":   id,
+						"name": data.Name,
+					})
+				})
+
+				payload := strings.NewReader(`{
+					"name": "Goravel"
+				}`)
+				req, _ = http.NewRequest(method, url, payload)
+				req.Header.Set("Content-Type", "application/json")
+
+				return nil
+			},
+			expectCode: http.StatusOK,
+			expectBody: "{\"id\":\"2\",\"name\":\"Goravel\"}",
+		},
+		{
+			name:   "Input - from form, then Bind",
+			method: "POST",
+			url:    "/input/form/1?id=2",
+			setup: func(method, url string) error {
+				gin.Post("/input/form/{id}", func(ctx httpcontract.Context) {
+					id := ctx.Request().Input("id")
+					var data struct {
+						Name string `form:"name" json:"name"`
+					}
+					_ = ctx.Request().Bind(&data)
+					ctx.Response().Success().Json(httpcontract.Json{
+						"id":   id,
+						"name": data.Name,
+					})
+				})
+
+				payload := &bytes.Buffer{}
+				writer := multipart.NewWriter(payload)
+				if err := writer.WriteField("name", "Goravel"); err != nil {
+					return err
+				}
+				if err := writer.Close(); err != nil {
+					return err
+				}
+
+				req, _ = http.NewRequest(method, url, payload)
+				req.Header.Set("Content-Type", writer.FormDataContentType())
+
+				return nil
+			},
+			expectCode: http.StatusOK,
+			expectBody: "{\"id\":\"2\",\"name\":\"Goravel\"}",
 		},
 		{
 			name:   "Input - from query",
@@ -675,6 +1030,34 @@ func TestGinRequest(t *testing.T) {
 			expectBody: "{\"name\":\"Goravel\"}",
 		},
 		{
+			name:   "Bind, then Input",
+			method: "POST",
+			url:    "/bind",
+			setup: func(method, url string) error {
+				gin.Post("/bind", func(ctx httpcontract.Context) {
+					type Test struct {
+						Name string
+					}
+					var test Test
+					_ = ctx.Request().Bind(&test)
+					ctx.Response().Success().Json(httpcontract.Json{
+						"name":  test.Name,
+						"name1": ctx.Request().Input("Name"),
+					})
+				})
+
+				payload := strings.NewReader(`{
+					"Name": "Goravel"
+				}`)
+				req, _ = http.NewRequest(method, url, payload)
+				req.Header.Set("Content-Type", "application/json")
+
+				return nil
+			},
+			expectCode: http.StatusOK,
+			expectBody: "{\"name\":\"Goravel\",\"name1\":\"Goravel\"}",
+		},
+		{
 			name:   "Query",
 			method: "GET",
 			url:    "/query?string=Goravel&int=1&int64=2&bool1=1&bool2=true&bool3=on&bool4=yes&bool5=0&error=a",
@@ -742,6 +1125,24 @@ func TestGinRequest(t *testing.T) {
 			expectBody: "{\"name\":{\"a\":\"Goravel\",\"b\":\"Goravel1\"}}",
 		},
 		{
+			name:   "Queries",
+			method: "GET",
+			url:    "/queries?string=Goravel&int=1&int64=2&bool1=1&bool2=true&bool3=on&bool4=yes&bool5=0&error=a",
+			setup: func(method, url string) error {
+				gin.Get("/queries", func(ctx httpcontract.Context) {
+					ctx.Response().Success().Json(httpcontract.Json{
+						"all": ctx.Request().All(),
+					})
+				})
+
+				req, _ = http.NewRequest(method, url, nil)
+
+				return nil
+			},
+			expectCode: http.StatusOK,
+			expectBody: "{\"all\":{\"bool1\":\"1\",\"bool2\":\"true\",\"bool3\":\"on\",\"bool4\":\"yes\",\"bool5\":\"0\",\"error\":\"a\",\"int\":\"1\",\"int64\":\"2\",\"string\":\"Goravel\"}}",
+		},
+		{
 			name:   "File",
 			method: "POST",
 			url:    "/file",
@@ -749,11 +1150,15 @@ func TestGinRequest(t *testing.T) {
 				gin.Post("/file", func(ctx httpcontract.Context) {
 					mockConfig.On("GetString", "app.name").Return("goravel").Once()
 					mockConfig.On("GetString", "filesystems.default").Return("local").Once()
+					frameworkfilesystem.ConfigFacade = mockConfig
+
+					mockStorage := &filesystemmock.Storage{}
+					mockDriver := &filesystemmock.Driver{}
+					mockStorage.On("Disk", "local").Return(mockDriver).Once()
+					frameworkfilesystem.StorageFacade = mockStorage
 
 					fileInfo, err := ctx.Request().File("file")
 
-					mockStorage, mockDriver, _ := mock.Storage()
-					mockStorage.On("Disk", "local").Return(mockDriver).Once()
 					mockDriver.On("PutFile", "test", fileInfo).Return("test/logo.png", nil).Once()
 					mockStorage.On("Exists", "test/logo.png").Return(true).Once()
 
@@ -818,8 +1223,9 @@ func TestGinRequest(t *testing.T) {
 			url:    "/validator/validate/success?name=Goravel",
 			setup: func(method, url string) error {
 				gin.Get("/validator/validate/success", func(ctx httpcontract.Context) {
-					mockValication, _, _ := mock.Validation()
+					mockValication := &validationmock.Validation{}
 					mockValication.On("Rules").Return([]validation.Rule{}).Once()
+					frameworkhttp.ValidationFacade = mockValication
 
 					validator, err := ctx.Request().Validate(map[string]string{
 						"name": "required",
@@ -863,8 +1269,9 @@ func TestGinRequest(t *testing.T) {
 			url:    "/validator/validate/fail?name=Goravel",
 			setup: func(method, url string) error {
 				gin.Get("/validator/validate/fail", func(ctx httpcontract.Context) {
-					mockValication, _, _ := mock.Validation()
+					mockValication := &validationmock.Validation{}
 					mockValication.On("Rules").Return([]validation.Rule{}).Once()
+					frameworkhttp.ValidationFacade = mockValication
 
 					validator, err := ctx.Request().Validate(map[string]string{
 						"name1": "required",
@@ -900,8 +1307,9 @@ func TestGinRequest(t *testing.T) {
 			url:    "/validator/validate-request/success?name=Goravel",
 			setup: func(method, url string) error {
 				gin.Get("/validator/validate-request/success", func(ctx httpcontract.Context) {
-					mockValication, _, _ := mock.Validation()
+					mockValication := &validationmock.Validation{}
 					mockValication.On("Rules").Return([]validation.Rule{}).Once()
+					frameworkhttp.ValidationFacade = mockValication
 
 					var createUser CreateUser
 					validateErrors, err := ctx.Request().ValidateRequest(&createUser)
@@ -936,8 +1344,9 @@ func TestGinRequest(t *testing.T) {
 			url:    "/validator/validate-request/fail?name1=Goravel",
 			setup: func(method, url string) error {
 				gin.Get("/validator/validate-request/fail", func(ctx httpcontract.Context) {
-					mockValication, _, _ := mock.Validation()
+					mockValication := &validationmock.Validation{}
 					mockValication.On("Rules").Return([]validation.Rule{}).Once()
+					frameworkhttp.ValidationFacade = mockValication
 
 					var createUser CreateUser
 					validateErrors, err := ctx.Request().ValidateRequest(&createUser)
@@ -972,8 +1381,9 @@ func TestGinRequest(t *testing.T) {
 			url:    "/validator/validate/success",
 			setup: func(method, url string) error {
 				gin.Post("/validator/validate/success", func(ctx httpcontract.Context) {
-					mockValication, _, _ := mock.Validation()
+					mockValication := &validationmock.Validation{}
 					mockValication.On("Rules").Return([]validation.Rule{}).Once()
+					frameworkhttp.ValidationFacade = mockValication
 
 					validator, err := ctx.Request().Validate(map[string]string{
 						"name": "required",
@@ -1018,8 +1428,9 @@ func TestGinRequest(t *testing.T) {
 			url:    "/validator/validate/fail",
 			setup: func(method, url string) error {
 				gin.Post("/validator/validate/fail", func(ctx httpcontract.Context) {
-					mockValication, _, _ := mock.Validation()
+					mockValication := &validationmock.Validation{}
 					mockValication.On("Rules").Return([]validation.Rule{}).Once()
+					frameworkhttp.ValidationFacade = mockValication
 
 					validator, err := ctx.Request().Validate(map[string]string{
 						"name1": "required",
@@ -1054,8 +1465,9 @@ func TestGinRequest(t *testing.T) {
 			url:    "/validator/validate-request/success",
 			setup: func(method, url string) error {
 				gin.Post("/validator/validate-request/success", func(ctx httpcontract.Context) {
-					mockValication, _, _ := mock.Validation()
+					mockValication := &validationmock.Validation{}
 					mockValication.On("Rules").Return([]validation.Rule{}).Once()
+					frameworkhttp.ValidationFacade = mockValication
 
 					var createUser CreateUser
 					validateErrors, err := ctx.Request().ValidateRequest(&createUser)
@@ -1090,8 +1502,9 @@ func TestGinRequest(t *testing.T) {
 			url:    "/validator/validate-request/fail",
 			setup: func(method, url string) error {
 				gin.Post("/validator/validate-request/fail", func(ctx httpcontract.Context) {
-					mockValication, _, _ := mock.Validation()
+					mockValication := &validationmock.Validation{}
 					mockValication.On("Rules").Return([]validation.Rule{}).Once()
+					frameworkhttp.ValidationFacade = mockValication
 
 					var createUser CreateUser
 					validateErrors, err := ctx.Request().ValidateRequest(&createUser)
@@ -1175,13 +1588,13 @@ func TestGinResponse(t *testing.T) {
 	var (
 		gin        *Gin
 		req        *http.Request
-		mockConfig *configmocks.Config
+		mockConfig *configmock.Config
 	)
 	beforeEach := func() {
-		mockConfig = mock.Config()
+		mockConfig = &configmock.Config{}
 		mockConfig.On("GetBool", "app.debug").Return(true).Once()
 
-		gin = NewGin()
+		gin = NewGin(mockConfig)
 	}
 	tests := []struct {
 		name         string

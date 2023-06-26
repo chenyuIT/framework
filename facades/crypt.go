@@ -4,4 +4,6 @@ import (
 	"github.com/chenyuIT/framework/contracts/crypt"
 )
 
-var Crypt crypt.Crypt
+func Crypt() crypt.Crypt {
+	return App().MakeCrypt()
+}

@@ -1,5 +1,9 @@
 package facades
 
-import "github.com/chenyuIT/framework/contracts/cache"
+import (
+	"github.com/chenyuIT/framework/contracts/cache"
+)
 
-var Cache cache.Store
+func Cache() cache.Cache {
+	return App().MakeCache()
+}

@@ -20,5 +20,12 @@ func TestListenerMakeCommand(t *testing.T) {
 	err = listenerMakeCommand.Handle(mockContext)
 	assert.Nil(t, err)
 	assert.True(t, file.Exists("app/listeners/goravel_listen.go"))
-	assert.True(t, file.Remove("app"))
+
+	mockContext.On("Argument", 0).Return("Goravel/Listen").Once()
+	err = listenerMakeCommand.Handle(mockContext)
+	assert.Nil(t, err)
+	assert.True(t, file.Exists("app/listeners/Goravel/listen.go"))
+	assert.True(t, file.Contain("app/listeners/Goravel/listen.go", "package Goravel"))
+	assert.True(t, file.Contain("app/listeners/Goravel/listen.go", "type Listen struct {"))
+	assert.Nil(t, file.Remove("app"))
 }

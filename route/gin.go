@@ -2,95 +2,44 @@ package route
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gookit/color"
 
+	"github.com/chenyuIT/framework/contracts/config"
 	httpcontract "github.com/chenyuIT/framework/contracts/http"
 	"github.com/chenyuIT/framework/contracts/route"
-	"github.com/chenyuIT/framework/facades"
 	goravelhttp "github.com/chenyuIT/framework/http"
 )
 
 type Gin struct {
 	route.Route
+	config   config.Config
 	instance *gin.Engine
 }
 
-func NewGin() *Gin {
+func NewGin(config config.Config) *Gin {
 	gin.SetMode(gin.ReleaseMode)
 	engine := gin.New()
-	if debugLog := getDebugLog(); debugLog != nil {
+	if debugLog := getDebugLog(config); debugLog != nil {
 		engine.Use(debugLog)
 	}
 
-	return &Gin{instance: engine, Route: NewGinGroup(
-		engine.Group("/"),
-		"",
-		[]httpcontract.Middleware{},
-		[]httpcontract.Middleware{goravelhttp.GinResponseMiddleware()},
-	)}
+	return &Gin{
+		Route: NewGinGroup(engine.Group("/"),
+			"",
+			[]httpcontract.Middleware{},
+			[]httpcontract.Middleware{goravelhttp.GinResponseMiddleware()},
+		),
+		config:   config,
+		instance: engine,
+	}
 }
 
-func (r *Gin) Run(host ...string) error {
-	if len(host) == 0 {
-		defaultHost := facades.Config.GetString("http.host")
-		if defaultHost == "" {
-			return errors.New("host can't be empty")
-		}
-
-		defaultPort := facades.Config.GetString("http.port")
-		if defaultPort == "" {
-			return errors.New("port can't be empty")
-		}
-		completeHost := defaultHost + ":" + defaultPort
-		host = append(host, completeHost)
-	}
-
-	outputRoutes(r.instance.Routes())
-	color.Greenln("[HTTP] Listening and serving HTTP on " + host[0])
-
-	return r.instance.Run([]string{host[0]}...)
-}
-
-func (r *Gin) RunTLS(host ...string) error {
-	if len(host) == 0 {
-		defaultHost := facades.Config.GetString("http.tls.host")
-		if defaultHost == "" {
-			return errors.New("host can't be empty")
-		}
-
-		defaultPort := facades.Config.GetString("http.tls.port")
-		if defaultPort == "" {
-			return errors.New("port can't be empty")
-		}
-		completeHost := defaultHost + ":" + defaultPort
-		host = append(host, completeHost)
-	}
-
-	certFile := facades.Config.GetString("http.tls.ssl.cert")
-	keyFile := facades.Config.GetString("http.tls.ssl.key")
-
-	return r.RunTLSWithCert(host[0], certFile, keyFile)
-}
-
-func (r *Gin) RunTLSWithCert(host, certFile, keyFile string) error {
-	if host == "" {
-		return errors.New("host can't be empty")
-	}
-	if certFile == "" || keyFile == "" {
-		return errors.New("certificate can't be empty")
-	}
-
-	outputRoutes(r.instance.Routes())
-	color.Greenln("[HTTPS] Listening and serving HTTPS on " + host)
-
-	return r.instance.RunTLS(host, certFile, keyFile)
-}
-
-func (r *Gin) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
-	r.instance.ServeHTTP(writer, request)
+func (r *Gin) Fallback(handler httpcontract.HandlerFunc) {
+	r.instance.NoRoute(handlerToGinHandler(handler))
 }
 
 func (r *Gin) GlobalMiddleware(middlewares ...httpcontract.Middleware) {
@@ -103,4 +52,77 @@ func (r *Gin) GlobalMiddleware(middlewares ...httpcontract.Middleware) {
 		[]httpcontract.Middleware{},
 		[]httpcontract.Middleware{goravelhttp.GinResponseMiddleware()},
 	)
+}
+
+func (r *Gin) Run(host ...string) error {
+	if len(host) == 0 {
+		defaultHost := r.config.GetString("http.host")
+		if defaultHost == "" {
+			return errors.New("host can't be empty")
+		}
+
+		defaultPort := r.config.GetString("http.port")
+		if defaultPort == "" {
+			return errors.New("port can't be empty")
+		}
+		completeHost := defaultHost + ":" + defaultPort
+		host = append(host, completeHost)
+	}
+
+	r.outputRoutes()
+	color.Greenln("[HTTP] Listening and serving HTTP on " + host[0])
+
+	server := &http.Server{
+		Addr:    host[0],
+		Handler: http.AllowQuerySemicolons(r.instance),
+	}
+
+	return server.ListenAndServe()
+}
+
+func (r *Gin) RunTLS(host ...string) error {
+	if len(host) == 0 {
+		defaultHost := r.config.GetString("http.tls.host")
+		if defaultHost == "" {
+			return errors.New("host can't be empty")
+		}
+
+		defaultPort := r.config.GetString("http.tls.port")
+		if defaultPort == "" {
+			return errors.New("port can't be empty")
+		}
+		completeHost := defaultHost + ":" + defaultPort
+		host = append(host, completeHost)
+	}
+
+	certFile := r.config.GetString("http.tls.ssl.cert")
+	keyFile := r.config.GetString("http.tls.ssl.key")
+
+	return r.RunTLSWithCert(host[0], certFile, keyFile)
+}
+
+func (r *Gin) RunTLSWithCert(host, certFile, keyFile string) error {
+	if host == "" {
+		return errors.New("host can't be empty")
+	}
+	if certFile == "" || keyFile == "" {
+		return errors.New("certificate can't be empty")
+	}
+
+	r.outputRoutes()
+	color.Greenln("[HTTPS] Listening and serving HTTPS on " + host)
+
+	return r.instance.RunTLS(host, certFile, keyFile)
+}
+
+func (r *Gin) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+	r.instance.ServeHTTP(writer, request)
+}
+
+func (r *Gin) outputRoutes() {
+	if r.config.GetBool("app.debug") && !runningInConsole() {
+		for _, item := range r.instance.Routes() {
+			fmt.Printf("%-10s %s\n", item.Method, colonToBracket(item.Path))
+		}
+	}
 }

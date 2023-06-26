@@ -1,35 +1,32 @@
 package queue
 
 import (
+	configcontract "github.com/chenyuIT/framework/contracts/config"
 	"github.com/chenyuIT/framework/contracts/queue"
-	"github.com/chenyuIT/framework/facades"
-	"github.com/chenyuIT/framework/queue/support"
 )
 
 type Application struct {
-	jobs []queue.Job
+	config *Config
+	jobs   []queue.Job
 }
 
-func NewApplication() *Application {
-	return &Application{}
+func NewApplication(config configcontract.Config) *Application {
+	return &Application{
+		config: NewConfig(config),
+	}
 }
 
 func (app *Application) Worker(args *queue.Args) queue.Worker {
+	defaultConnection := app.config.DefaultConnection()
+
 	if args == nil {
-		connection := facades.Config.GetString("queue.default")
-
-		return &support.Worker{
-			Connection: connection,
-			Queue:      support.GetQueueName(connection, ""),
-			Concurrent: 1,
-		}
+		return NewWorker(app.config, 1, defaultConnection, app.jobs, app.config.Queue(defaultConnection, ""))
+	}
+	if args.Connection == "" {
+		args.Connection = defaultConnection
 	}
 
-	return &support.Worker{
-		Connection: args.Connection,
-		Queue:      support.GetQueueName(args.Connection, args.Queue),
-		Concurrent: args.Concurrent,
-	}
+	return NewWorker(app.config, args.Concurrent, args.Connection, app.jobs, app.config.Queue(args.Connection, args.Queue))
 }
 
 func (app *Application) Register(jobs []queue.Job) {
@@ -41,15 +38,9 @@ func (app *Application) GetJobs() []queue.Job {
 }
 
 func (app *Application) Job(job queue.Job, args []queue.Arg) queue.Task {
-	return &support.Task{
-		Job:  job,
-		Args: args,
-	}
+	return NewTask(app.config, job, args)
 }
 
 func (app *Application) Chain(jobs []queue.Jobs) queue.Task {
-	return &support.Task{
-		Jobs:  jobs,
-		Chain: true,
-	}
+	return NewChainTask(app.config, jobs)
 }

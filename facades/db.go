@@ -4,4 +4,6 @@ import (
 	"github.com/chenyuIT/framework/contracts/database/orm"
 )
 
-var Orm orm.Orm
+func Orm() orm.Orm {
+	return App().MakeOrm()
+}

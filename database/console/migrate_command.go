@@ -6,33 +6,41 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/gookit/color"
 
+	"github.com/chenyuIT/framework/contracts/config"
 	"github.com/chenyuIT/framework/contracts/console"
 	"github.com/chenyuIT/framework/contracts/console/command"
 )
 
 type MigrateCommand struct {
+	config config.Config
 }
 
-//Signature The name and signature of the console command.
+func NewMigrateCommand(config config.Config) *MigrateCommand {
+	return &MigrateCommand{
+		config: config,
+	}
+}
+
+// Signature The name and signature of the console command.
 func (receiver *MigrateCommand) Signature() string {
 	return "migrate"
 }
 
-//Description The console command description.
+// Description The console command description.
 func (receiver *MigrateCommand) Description() string {
 	return "Run the database migrations"
 }
 
-//Extend The console command extend.
+// Extend The console command extend.
 func (receiver *MigrateCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "migrate",
 	}
 }
 
-//Handle Execute the console command.
+// Handle Execute the console command.
 func (receiver *MigrateCommand) Handle(ctx console.Context) error {
-	m, err := getMigrate()
+	m, err := getMigrate(receiver.config)
 	if err != nil {
 		return err
 	}
@@ -42,7 +50,7 @@ func (receiver *MigrateCommand) Handle(ctx console.Context) error {
 		return nil
 	}
 
-	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+	if err = m.Up(); err != nil && err != migrate.ErrNoChange {
 		color.Redln("Migration failed:", err.Error())
 
 		return nil

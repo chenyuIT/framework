@@ -4,4 +4,6 @@ import (
 	"github.com/chenyuIT/framework/contracts/validation"
 )
 
-var Validation validation.Validation
+func Validation() validation.Validation {
+	return App().MakeValidation()
+}

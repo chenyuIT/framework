@@ -1,50 +1,50 @@
 package cache
 
 import (
-	"context"
-
-	"github.com/gookit/color"
-
 	"github.com/chenyuIT/framework/contracts/cache"
-	"github.com/chenyuIT/framework/facades"
+	"github.com/chenyuIT/framework/contracts/config"
+	"github.com/chenyuIT/framework/contracts/log"
 )
 
 type Application struct {
+	cache.Driver
+	config config.Config
+	driver Driver
+	log    log.Log
+	stores map[string]cache.Driver
 }
 
-func (app *Application) Init() cache.Store {
-	defaultStore := facades.Config.GetString("cache.default")
-	driver := facades.Config.GetString("cache.stores." + defaultStore + ".driver")
-	if driver == "redis" {
-		redis, err := NewRedis(context.Background())
-		if err != nil {
-			color.Redf("[Cache] Init redis driver error: %v\n", err)
-			return nil
-		}
-
-		return redis
+func NewApplication(config config.Config, log log.Log, store string) (*Application, error) {
+	driver := NewDriverImpl(config)
+	instance, err := driver.New(store)
+	if err != nil {
+		return nil, err
 	}
 
-	if driver == "memory" {
-		memory, err := NewMemory()
-		if err != nil {
-			color.Redf("[Cache] Init memory driver error: %v\n", err)
-			return nil
-		}
+	return &Application{
+		Driver: instance,
+		config: config,
+		driver: driver,
+		log:    log,
+		stores: map[string]cache.Driver{
+			store: instance,
+		},
+	}, nil
+}
 
-		return memory
+func (app *Application) Store(name string) cache.Driver {
+	if driver, exist := app.stores[name]; exist {
+		return driver
 	}
 
-	if driver == "custom" {
-		if custom, ok := facades.Config.Get("cache.stores." + defaultStore + ".via").(cache.Store); ok {
-			return custom
-		}
-		color.Redf("[Cache] %s doesn't implement contracts/cache/store\n", defaultStore)
+	instance, err := app.driver.New(name)
+	if err != nil {
+		app.log.Error(err)
 
 		return nil
 	}
 
-	color.Redf("[Cache] Not supported cache store: %s\n", defaultStore)
+	app.stores[name] = instance
 
-	return nil
+	return instance
 }

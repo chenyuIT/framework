@@ -3,31 +3,37 @@ package console
 import (
 	"github.com/gookit/color"
 
+	"github.com/chenyuIT/framework/contracts/config"
 	"github.com/chenyuIT/framework/contracts/console"
 	"github.com/chenyuIT/framework/contracts/console/command"
 )
 
 type MigrateMakeCommand struct {
+	config config.Config
 }
 
-//Signature The name and signature of the console command.
+func NewMigrateMakeCommand(config config.Config) *MigrateMakeCommand {
+	return &MigrateMakeCommand{config: config}
+}
+
+// Signature The name and signature of the console command.
 func (receiver *MigrateMakeCommand) Signature() string {
 	return "make:migration"
 }
 
-//Description The console command description.
+// Description The console command description.
 func (receiver *MigrateMakeCommand) Description() string {
 	return "Create a new migration file"
 }
 
-//Extend The console command extend.
+// Extend The console command extend.
 func (receiver *MigrateMakeCommand) Extend() command.Extend {
 	return command.Extend{
 		Category: "make",
 	}
 }
 
-//Handle Execute the console command.
+// Handle Execute the console command.
 func (receiver *MigrateMakeCommand) Handle(ctx console.Context) error {
 	// It's possible for the developer to specify the tables to modify in this
 	// schema operation. The developer may also specify if this table needs
@@ -45,7 +51,10 @@ func (receiver *MigrateMakeCommand) Handle(ctx console.Context) error {
 	table, create := TableGuesser{}.Guess(name)
 
 	//Write the migration file to disk.
-	MigrateCreator{}.Create(name, table, create)
+	migrateCreator := NewMigrateCreator(receiver.config)
+	if err := migrateCreator.Create(name, table, create); err != nil {
+		return err
+	}
 
 	color.Green.Printf("Created Migration: %s\n", name)
 

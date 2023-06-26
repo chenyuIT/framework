@@ -7,9 +7,12 @@ import (
 	"github.com/spf13/cast"
 	"github.com/spf13/viper"
 
+	"github.com/chenyuIT/framework/contracts/config"
 	"github.com/chenyuIT/framework/support"
 	"github.com/chenyuIT/framework/support/file"
 )
+
+var _ config.Config = &Application{}
 
 type Application struct {
 	vip *viper.Viper
@@ -54,7 +57,7 @@ func NewApplication(envPath string) *Application {
 	return app
 }
 
-//Env Get config from env.
+// Env Get config from env.
 func (app *Application) Env(envName string, defaultValue ...any) any {
 	value := app.Get(envName, defaultValue...)
 	if cast.ToString(value) == "" {
@@ -68,12 +71,12 @@ func (app *Application) Env(envName string, defaultValue ...any) any {
 	return value
 }
 
-//Add config to application.
-func (app *Application) Add(name string, configuration map[string]any) {
+// Add config to application.
+func (app *Application) Add(name string, configuration any) {
 	app.vip.Set(name, configuration)
 }
 
-//Get config from application.
+// Get config from application.
 func (app *Application) Get(path string, defaultValue ...any) any {
 	if !app.vip.IsSet(path) {
 		if len(defaultValue) > 0 {
@@ -85,7 +88,7 @@ func (app *Application) Get(path string, defaultValue ...any) any {
 	return app.vip.Get(path)
 }
 
-//GetString Get string type config from application.
+// GetString Get string type config from application.
 func (app *Application) GetString(path string, defaultValue ...any) string {
 	value := cast.ToString(app.Get(path, defaultValue...))
 	if value == "" {
@@ -99,7 +102,7 @@ func (app *Application) GetString(path string, defaultValue ...any) string {
 	return value
 }
 
-//GetInt Get int type config from application.
+// GetInt Get int type config from application.
 func (app *Application) GetInt(path string, defaultValue ...any) int {
 	value := app.Get(path, defaultValue...)
 	if cast.ToString(value) == "" {
@@ -113,7 +116,7 @@ func (app *Application) GetInt(path string, defaultValue ...any) int {
 	return cast.ToInt(value)
 }
 
-//GetBool Get bool type config from application.
+// GetBool Get bool type config from application.
 func (app *Application) GetBool(path string, defaultValue ...any) bool {
 	value := app.Get(path, defaultValue...)
 	if cast.ToString(value) == "" {
